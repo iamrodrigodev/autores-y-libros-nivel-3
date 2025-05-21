@@ -1,4 +1,5 @@
 const User = require('../models/user.model');
+const mongoose = require('mongoose');
 
 // Función para formatear la fecha actual
 const getFormattedTime = () => {
@@ -8,6 +9,24 @@ const getFormattedTime = () => {
         second: '2-digit',
         hour12: false 
     });
+};
+
+// Función para verificar la conexión a la base de datos
+const checkDatabaseConnection = async () => {
+    try {
+        if (mongoose.connection.readyState !== 1) {
+            console.log('🔃 Intentando reconectar a la base de datos...');
+            await mongoose.connect(process.env.MONGO_URI, {
+                serverSelectionTimeoutMS: 5000,
+                socketTimeoutMS: 30000
+            });
+            console.log('✅ Conexión a la base de datos establecida');
+        }
+        return true;
+    } catch (error) {
+        console.error('❌ Error al conectar a la base de datos:', error.message);
+        return false;
+    }
 };
 
 /**
@@ -40,21 +59,9 @@ exports.loginUser = async (req, res) => {
         const telefonoLimpio = telefono.toString().trim();
         const errores = [];
         
-        // Validar que solo contenga números
-        if (!/^\d+$/.test(telefonoLimpio)) {
-            errores.push('El teléfono solo debe contener números');
-        } else {
-            // Solo validar estos si el teléfono tiene formato numérico
-            
-            // Validar que comience con 9
-            if (!telefonoLimpio.startsWith('9')) {
-                errores.push('El teléfono debe comenzar con 9');
-            }
-            
-            // Validar longitud exacta de 9 dígitos
-            if (telefonoLimpio.length !== 9) {
-                errores.push('El teléfono debe tener exactamente 9 dígitos');
-            }
+        // Validar formato del teléfono
+        if (!/^9\d{8}$/.test(telefonoLimpio)) {
+            errores.push('El teléfono debe comenzar con 9 y tener 9 dígitos numéricos');
         }
         
         // Si hay errores, retornarlos todos juntos
@@ -67,16 +74,49 @@ exports.loginUser = async (req, res) => {
             });
         }
 
-        log(`Autenticando usuario: ${telefono}`);
+        log(`Autenticando usuario: ${telefonoLimpio}`);
         
-        // Buscar usuario en la base de datos
-        const user = await User.findOne({ telefono: telefono.trim() });
+        // Verificar conexión a la base de datos
+        const isConnected = await checkDatabaseConnection();
+        if (!isConnected) {
+            log('Error: No se pudo conectar a la base de datos');
+            return res.status(503).json({
+                success: false,
+                message: 'Error de conexión con el servidor. Por favor, intente nuevamente.'
+            });
+        }
+        
+        // Buscar usuario en la base de datos con un timeout
+        const user = await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                reject(new Error('Tiempo de espera agotado al buscar el usuario'));
+            }, 8000); // 8 segundos de timeout
+            
+            User.findOne({ telefono: telefonoLimpio })
+                .then(result => {
+                    clearTimeout(timeout);
+                    resolve(result);
+                })
+                .catch(err => {
+                    clearTimeout(timeout);
+                    reject(err);
+                });
+        });
         
         if (!user) {
             log('Error: Usuario no encontrado');
             return res.status(401).json({
                 success: false,
                 message: 'Credenciales inválidas'
+            });
+        }
+        
+        // Verificar si el usuario está activo
+        if (user.activo === false) {
+            log('Error: Cuenta desactivada');
+            return res.status(403).json({
+                success: false,
+                message: 'Esta cuenta ha sido desactivada. Contacte al administrador.'
             });
         }
         
@@ -90,14 +130,36 @@ exports.loginUser = async (req, res) => {
             });
         }
         
-        // Generar token si no existe o está vacío
-        if (!user.token) {
-            log('Generando nuevo token');
-            user.token = user.generateToken();
+        // Generar token
+        log('Generando nuevo token');
+        const token = user.generateToken();
+        
+        // Actualizar el token en la base de datos
+        user.token = token;
+        user.ultimo_acceso = new Date();
+        
+        try {
             await user.save();
-            log('Token generado y guardado');
-        } else {
-            log('Usando token existente');
+            log('Token generado y guardado correctamente');
+            
+            // Obtener datos del usuario para la respuesta (sin la contraseña)
+            const userData = user.toObject();
+            delete userData.clave;
+            
+            return res.status(200).json({
+                success: true,
+                message: 'Inicio de sesión exitoso',
+                token,
+                user: userData
+            });
+            
+        } catch (saveError) {
+            console.error('Error al guardar el token:', saveError);
+            return res.status(500).json({
+                success: false,
+                message: 'Error al iniciar sesión',
+                error: 'No se pudo guardar el token de autenticación'
+            });
         }
 
         // Crear objeto de respuesta sin información sensible

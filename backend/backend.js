@@ -1,11 +1,8 @@
 require('dotenv').config({ path: '.env.local' });
 const express = require('express');
 const cors = require('cors');
-const mongoose = require('mongoose');
+const { mongoose, connectDB } = require('./src/config/db');
 const autoresRoutes = require('./src/routes/autores.routes');
-
-// Importar la conexión a la base de datos
-require('./src/config/db');
 
 // Inicializar la aplicación Express
 const app = express();
@@ -35,20 +32,37 @@ app.use((err, req, res, next) => {
 });
 
 // Iniciar el servidor
-const startServer = () => {
-    // Usamos el evento 'open' de la conexión de Mongoose
-    mongoose.connection.once('open', () => {
-        app.listen(PORT, () => {
-            console.log(`Servidor corriendo en http://localhost:${PORT}`);
-            console.log(`Ruta de Autores: http://localhost:${PORT}/api/autores`);
+const startServer = async () => {
+    try {
+        console.log('\nConectando a la base de datos...');
+        await connectDB();
+        
+        // Iniciar el servidor una vez que la base de datos esté conectada
+        const server = app.listen(PORT, () => {
+            console.log(`\n✅ Servidor backend ejecutándose en el puerto ${PORT}`);
+            console.log(`📚 Ruta de Autores: http://localhost:${PORT}/api/autores`);
         });
-    });
-
-    // Manejar errores de conexión
-    mongoose.connection.on('error', (err) => {
-        console.error('❌ Error de conexión a MongoDB:', err);
+        
+        // Manejar cierre del servidor
+        process.on('SIGINT', async () => {
+            console.log('\nCerrando servidor...');
+            server.close(async () => {
+                console.log('Servidor cerrado');
+                try {
+                    await mongoose.connection.close();
+                    console.log('Conexión a MongoDB cerrada');
+                    process.exit(0);
+                } catch (err) {
+                    console.error('Error al cerrar la conexión a MongoDB:', err);
+                    process.exit(1);
+                }
+            });
+        });
+        
+    } catch (error) {
+        console.error('❌ Error al iniciar el servidor:', error);
         process.exit(1);
-    });
+    }
 };
 
 // Manejo de cierre de la aplicación
