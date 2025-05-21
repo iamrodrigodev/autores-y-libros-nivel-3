@@ -6,7 +6,7 @@ const requiredEnvVars = ['MONGO_URI', 'JWT_SECRET'];
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
 
 if (missingEnvVars.length > 0) {
-    console.error('❌ Error: Faltan variables de entorno requeridas:', missingEnvVars.join(', '));
+    console.error('Error: Faltan variables de entorno requeridas:', missingEnvVars.join(', '));
     process.exit(1);
 }
 
@@ -52,8 +52,8 @@ const startServer = async () => {
         
         // Iniciar el servidor
         const server = app.listen(PORT, () => {
-            console.log(`📚 Base de datos: ${process.env.MONGO_URI}`);
-            console.log(`✅ Servidor de autenticación en http://localhost:${PORT}`);
+            console.log(`Base de datos: ${process.env.MONGO_URI}`);
+            console.log(`Servidor de autenticación en http://localhost:${PORT}`);
         });
 
         // Manejo de errores del servidor

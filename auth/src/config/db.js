@@ -13,20 +13,18 @@ const options = {
 const connectDB = async () => {
     try {
         console.log('URI:', process.env.MONGO_URI);
-        
-        await mongoose.connect(process.env.MONGO_URI, options);
-        
-        console.log('✅ Conexión a MongoDB establecida correctamente');
+        await mongoose.connect(process.env.MONGO_URI, options);  
+        console.log('Conexión a MongoDB establecida correctamente');
         return mongoose.connection;
     } catch (error) {
-        console.error('❌ Error al conectar a MongoDB:', error.message);
+        console.error('Error al conectar a MongoDB:', error.message);
         // No salir del proceso para permitir reintentos
         throw error;
     }
 };
 
 mongoose.connection.on('error', (err) => {
-    console.error('❌ Error de conexión a MongoDB:', err.message);
+    console.error('Error de conexión a MongoDB:', err.message);
 })
 
 process.on('SIGINT', async () => {
