@@ -36,6 +36,37 @@ exports.loginUser = async (req, res) => {
             });
         }
 
+        // Limpiar el número de teléfono
+        const telefonoLimpio = telefono.toString().trim();
+        const errores = [];
+        
+        // Validar que solo contenga números
+        if (!/^\d+$/.test(telefonoLimpio)) {
+            errores.push('El teléfono solo debe contener números');
+        } else {
+            // Solo validar estos si el teléfono tiene formato numérico
+            
+            // Validar que comience con 9
+            if (!telefonoLimpio.startsWith('9')) {
+                errores.push('El teléfono debe comenzar con 9');
+            }
+            
+            // Validar longitud exacta de 9 dígitos
+            if (telefonoLimpio.length !== 9) {
+                errores.push('El teléfono debe tener exactamente 9 dígitos');
+            }
+        }
+        
+        // Si hay errores, retornarlos todos juntos
+        if (errores.length > 0) {
+            log(`Error de validación: ${errores.join('; ')} - Teléfono: ${telefono}`);
+            return res.status(400).json({
+                success: false,
+                message: 'Error de validación del teléfono',
+                errors: errores
+            });
+        }
+
         log(`Autenticando usuario: ${telefono}`);
         
         // Buscar usuario en la base de datos
