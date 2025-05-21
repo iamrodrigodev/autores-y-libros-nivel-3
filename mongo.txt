@@ -140,5 +140,7 @@ db.Libros.insertMany([
 // Creacion de Usuarios:
 db.Usuarios.insertMany([
     { nombre: "Rodrigo", apellido_paterno: "Infanzón", apellido_materno: "Acosta", "telefono": "987654321", direccion: "Av. Principal 123, Lima", clave: "admin", fecha_nacimiento: ISODate("2004-04-16"), token : "" },
-    { nombre: "Daniel", apellido_paterno: "Aguilar", apellido_materno: "Chirinos", "telefono": "987654322", direccion: "Calle Secundaria 456, Lima", clave: "admin", fecha_nacimiento: ISODate("2004-04-16"), token: "" }
+    { nombre: "Daniel", apellido_paterno: "Aguilar", apellido_materno: "Chirinos", "telefono": "987654322", direccion: "Calle Secundaria 456, Lima", clave: "admin", fecha_nacimiento: ISODate("2004-04-16"), token: "" },
+    { nombre: "Enyel", apellido_paterno: "Panta", apellido_materno: "Huaracha", "telefono": "919056254", direccion: "Av. Lima", clave: "admin", fecha_nacimiento: ISODate("2005-04-23"), token: ""}
+]);
 ]);
