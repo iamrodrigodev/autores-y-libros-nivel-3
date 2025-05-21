@@ -53,7 +53,7 @@ const startServer = async () => {
         // Iniciar el servidor
         const server = app.listen(PORT, () => {
             console.log(`Base de datos: ${process.env.MONGO_URI}`);
-            console.log(`Servidor de autenticación en http://localhost:${PORT}`);
+            console.log(`Servidor de autenticación escuchando en http://localhost:${PORT}`);
         });
 
         // Manejo de errores del servidor
