@@ -2,10 +2,10 @@
   "name": "auth-service",
   "version": "1.0.0",
   "description": "Servicio de autenticación para la aplicación de Autores y Libros",
-  "main": "src/index.js",
+  "main": "auth.js",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "start": "node auth.js",
+    "dev": "nodemon auth.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
