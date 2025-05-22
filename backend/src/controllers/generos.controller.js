@@ -262,12 +262,24 @@ const actualizarGenero = async (req, res) => {
             }
         }
         
-        // Si hay errores, devolverlos todos juntos
-        if (errores.length > 0) {
+        // Si hay errores de validación o duplicados, devolverlos todos juntos
+        if (erroresValidacion.length > 0 || Object.keys(erroresDuplicados).length > 0) {
+            const errors = {};
+            
+            // Agregar errores de validación
+            if (erroresValidacion.length > 0) {
+                errors.validacion = erroresValidacion;
+            }
+            
+            // Agregar errores de duplicados
+            if (Object.keys(erroresDuplicados).length > 0) {
+                Object.assign(errors, erroresDuplicados);
+            }
+            
             return res.status(400).json({
                 success: false,
                 message: 'Error de validación',
-                errors: errores
+                errors: errors
             });
         }
 
@@ -336,19 +348,11 @@ const eliminarGenero = async (req, res) => {
     try {
         const { id } = req.params;
         
-        // Verificar longitud del ID
-        if (id.length !== 24) {
-            return res.status(400).json({
-                success: false,
-                error: `El ID proporcionado no es válido`
-            });
-        }
-
-        // Verificar si el ID es un ObjectId de MongoDB válido
+        // Verificar si el ID es válido
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
                 success: false,
-                error: `El ID proporcionado no es válido`
+                error: 'El ID proporcionado no es válido'
             });
         }
 
@@ -357,42 +361,47 @@ const eliminarGenero = async (req, res) => {
         if (!genero) {
             return res.status(404).json({
                 success: false,
-                error: `No existe un género con ese ID`
+                error: 'No existe un género con ese ID'
             });
         }
 
-        // Obtener el nombre del género para actualizar los libros
         const nombreGenero = genero.nombre;
-
-        // Eliminar el género
-        await Genero.findByIdAndDelete(id);
-
-        // Actualizar los libros que tenían este género
+        
+        // Obtener los libros que tienen este género
         const libros = await mongoose.connection.collection('Libros')
             .find({ generos: nombreGenero })
             .toArray();
+        
+        // Eliminar el género
+        await Genero.findByIdAndDelete(id);
 
-        // Si hay libros con este género, actualizarlos
-        if (libros.length > 0) {
-            for (const libro of libros) {
-                const nuevosGeneros = libro.generos.filter(gen => gen !== nombreGenero);
-                
-                await mongoose.connection.collection('Libros').updateOne(
-                    { _id: libro._id },
-                    { $set: { generos: nuevosGeneros } }
-                );
-            }
-
-            return res.status(200).json({
-                success: true,
-                message: `Género eliminado exitosamente y actualizados ${libros.length} libro(s)`
-            });
-        }
-
-        res.status(200).json({
+        // Preparar la respuesta base
+        const respuesta = {
             success: true,
             message: 'Género eliminado exitosamente'
-        });
+        };
+
+        // Actualizar los libros que tenían este género
+        if (libros.length > 0) {
+            // Usar updateMany con $pull para eliminar el género de todos los libros de una vez
+            await mongoose.connection.collection('Libros').updateMany(
+                { generos: nombreGenero },
+                { $pull: { generos: nombreGenero } }
+            );
+
+            const cantidad = libros.length;
+            const mensajeLibros = cantidad === 1 ? 'libro' : 'libros';
+            
+            respuesta.librosActualizados = {
+                mensaje: `Se eliminó el género de ${cantidad} ${mensajeLibros}`,
+                cantidad: cantidad,
+                libros: libros.map(libro => libro.titulo)
+            };
+        } else {
+            respuesta.librosActualizados = 'No se actualizaron libros';
+        }
+
+        res.status(200).json(respuesta);
     } catch (error) {
         console.error('Error al eliminar género:', error);
         res.status(500).json({
