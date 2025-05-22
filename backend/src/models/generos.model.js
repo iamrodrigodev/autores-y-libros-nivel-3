@@ -14,8 +14,26 @@ const GeneroSchema = new Schema({
         trim: true
     }
 }, { 
+    // Configuración del esquema
     timestamps: false,
-    validateBeforeSave: false 
+    validateBeforeSave: false,
+    versionKey: false, // Deshabilita el campo __v
+    toJSON: { 
+        virtuals: true,
+        transform: function(_doc, ret) {
+            delete ret._id; // Opcional: eliminar _id si no lo quieres en la respuesta
+            delete ret.__v;
+            return ret;
+        }
+    },
+    toObject: {
+        virtuals: true,
+        transform: function(_doc, ret) {
+            delete ret._id; // Opcional: eliminar _id si no lo quieres en la respuesta
+            delete ret.__v;
+            return ret;
+        }
+    }
 });
 
 // Índice para búsquedas por nombre
