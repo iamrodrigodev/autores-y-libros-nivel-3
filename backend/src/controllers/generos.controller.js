@@ -174,7 +174,7 @@ const actualizarGenero = async (req, res) => {
         if (id.length !== 24) {
             return res.status(400).json({
                 success: false,
-                error: `${id} no es un ID válido`
+                error: `El ID proporcionado no es válido`
             });
         }
 
@@ -182,7 +182,7 @@ const actualizarGenero = async (req, res) => {
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
                 success: false,
-                error: `${id} no es un ID válido`
+                error: `El ID proporcionado no es válido`
             });
         }
 
@@ -277,7 +277,7 @@ const eliminarGenero = async (req, res) => {
         if (id.length !== 24) {
             return res.status(400).json({
                 success: false,
-                error: `${id} no es un ID válido`
+                error: `El ID proporcionado no es válido`
             });
         }
 
@@ -285,7 +285,7 @@ const eliminarGenero = async (req, res) => {
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
                 success: false,
-                error: `${id} no es un ID válido`
+                error: `El ID proporcionado no es válido`
             });
         }
 
