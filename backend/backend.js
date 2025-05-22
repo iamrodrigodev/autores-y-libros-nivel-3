@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 
 // Importar rutas
 const autoresRoutes = require('./src/routes/autores.route');
+const generosRoutes = require('./src/routes/generos.route');
 
 // Importar configuración de la base de datos
 const database_mongo = require('./src/config/database');
@@ -16,6 +17,7 @@ app.use(express.json());
 
 // Rutas
 app.use('/api/autores', autoresRoutes);
+app.use('/api/generos', generosRoutes);
 
 // Iniciar servidor una vez que la conexión a la base de datos esté lista
 database_mongo.then(() => {
