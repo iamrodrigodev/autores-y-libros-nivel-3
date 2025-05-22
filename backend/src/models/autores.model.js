@@ -1,9 +1,6 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
-// Importar la conexión a la base de datos
-require('../config/database');
-
 // Esquema de Autor
 const AutorSchema = new Schema({
     nombre: { 
