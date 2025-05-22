@@ -8,9 +8,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+/*
 app.get('/ping', (_req, res) => {
   res.json({ mensaje: 'pong' });
-});
+}); */
 
 database_mongo.then(() => {
   const { name, host, port } = mongoose.connection;
@@ -21,6 +22,7 @@ database_mongo.then(() => {
   console.log(`Puerto: ${port}`);
   
   const PORT = process.env.PORT || 3000;
+  
   app.listen(PORT, () => {
     console.log(`Servidor backend escuchando en http://localhost:${PORT}`);
   });
