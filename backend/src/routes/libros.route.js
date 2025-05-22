@@ -12,4 +12,7 @@ router.get('/', librosController.obtenerLibros);
 // Ruta para obtener un libro específico por ID
 router.get('/:id', librosController.obtenerLibroPorId);
 
+// Ruta para actualizar un libro
+router.put('/:id', librosController.actualizarLibro);
+
 module.exports = router;

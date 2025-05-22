@@ -381,3 +381,259 @@ exports.obtenerLibroPorId = async (req, res) => {
         });
     }
 };
+
+// Actualizar un libro existente
+exports.actualizarLibro = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { 
+            titulo, 
+            fecha_publicacion, 
+            sinopsis, 
+            paginas, 
+            generos, 
+            autores,
+            disponibilidad
+        } = req.body;
+
+        const errores = {};
+        const now = new Date();
+
+        // Obtener el libro actual primero
+        const libroActual = await Libro.findById(id);
+        if (!libroActual) {
+            return res.status(404).json({
+                success: false,
+                error: 'Libro no encontrado con el ID proporcionado'
+            });
+        }
+
+        // Validar campos si se están actualizando
+        if (titulo !== undefined) {
+            if (titulo.trim() === '') {
+                errores.titulo = 'El título no puede estar vacío';
+            } else {
+                // Verificar si ya existe otro libro con el mismo título (ignorando mayúsculas/minúsculas)
+                const libroExistente = await Libro.findOne({
+                    _id: { $ne: id }, // Excluir el libro actual
+                    titulo: { $regex: new RegExp(`^${titulo.trim()}$`, 'i') }
+                });
+                
+                if (libroExistente) {
+                    errores.titulo = 'Ya existe un libro con este título';
+                }
+            }
+        }
+
+        if (fecha_publicacion !== undefined) {
+            const fechaPub = new Date(fecha_publicacion);
+            if (isNaN(fechaPub.getTime())) {
+                errores.fecha_publicacion = 'La fecha de publicación no es válida';
+            } else if (fechaPub > now) {
+                errores.fecha_publicacion = 'No se puede introducir una fecha futura';
+            }
+        }
+
+        if (sinopsis !== undefined) {
+            if (sinopsis.trim() === '') {
+                errores.sinopsis = 'La sinopsis no puede estar vacía';
+            } else {
+                // Verificar si ya existe otro libro con la misma sinopsis (ignorando espacios en blanco al inicio/fin)
+                const libroConMismaSinopsis = await Libro.findOne({
+                    _id: { $ne: id }, // Excluir el libro actual
+                    sinopsis: { $regex: new RegExp(`^\\s*${sinopsis.trim()}\\s*$`, 'i') }
+                });
+                
+                if (libroConMismaSinopsis) {
+                    errores.sinopsis = 'Ya existe un libro con esta sinopsis';
+                }
+            }
+        }
+
+        if (paginas !== undefined) {
+            const numPaginas = parseInt(paginas, 10);
+            if (isNaN(numPaginas) || numPaginas < 1) {
+                errores.paginas = 'El número de páginas debe ser mayor a 0';
+            }
+        }
+
+
+        // Validar géneros si se están actualizando
+        if (generos !== undefined) {
+            errores.generos = [];
+            
+            if (!Array.isArray(generos) || generos.length === 0) {
+                errores.generos.push('Debe proporcionar al menos un género');
+            } else {
+                // Verificar si hay géneros vacíos
+                const generosVacios = generos.some(g => !g || g.trim() === '');
+                if (generosVacios) {
+                    errores.generos.push('Los géneros no pueden estar vacíos');
+                }
+                
+                // Convertir a minúsculas para comparación insensible a mayúsculas
+                const generosLower = generos.map(g => g.trim().toLowerCase());
+                const generosUnicos = [...new Set(generosLower)];
+                
+                // Verificar duplicados (insensible a mayúsculas/minúsculas)
+                if (generosUnicos.length !== generos.length) {
+                    // Encontrar los duplicados (insensible a mayúsculas/minúsculas) pero mantener el formato original
+                    const duplicados = [];
+                    const vistos = new Set();
+                    
+                    for (const genero of generos) {
+                        const generoLower = genero.trim().toLowerCase();
+                        if (vistos.has(generoLower)) {
+                            // Si ya vimos este género (en minúsculas) pero con diferente formato
+                            const yaAgregado = duplicados.some(d => d.toLowerCase() === generoLower);
+                            if (!yaAgregado) {
+                                duplicados.push(genero);
+                            }
+                        } else {
+                            vistos.add(generoLower);
+                        }
+                    }
+                    
+                    errores.generos.push(`Géneros duplicados: ${duplicados.join(', ')}`);
+                }
+                
+                // Verificar existencia de géneros en la base de datos
+                if (generos.length > 0 && !generosVacios) {
+                    const generosExistentes = await mongoose.connection.collection('Generos').find({
+                        nombre: { $in: generos.map(g => g.trim()) }
+                    }).toArray();
+                    
+                    // Mantener el formato original de los géneros no encontrados
+                    const generosInvalidos = [];
+                    const vistos = new Set();
+                    
+                    for (const genero of generos) {
+                        const generoLower = genero.trim().toLowerCase();
+                        if (!vistos.has(generoLower) && 
+                            !generosExistentes.some(ge => ge.nombre.toLowerCase() === generoLower)) {
+                            generosInvalidos.push(genero);
+                            vistos.add(generoLower);
+                        }
+                    }
+                    
+                    if (generosInvalidos.length > 0) {
+                        errores.generos.push(`Géneros no encontrados: ${generosInvalidos.join(', ')}`);
+                    }
+                }
+                
+                // Si no hay errores, eliminar el array
+                if (errores.generos.length === 0) {
+                    delete errores.generos;
+                }
+            }
+        }
+
+        // Validar autores si se están actualizando
+        if (autores !== undefined) {
+            errores.autores = [];
+            
+            if (!Array.isArray(autores) || autores.length === 0) {
+                errores.autores.push('Debe proporcionar al menos un autor');
+            } else {
+                // Verificar si hay autores vacíos
+                const autoresVacios = autores.some(a => !a || a.trim() === '');
+                if (autoresVacios) {
+                    errores.autores.push('Los nombres de autores no pueden estar vacíos');
+                }
+                
+                // Convertir a minúsculas para comparación insensible a mayúsculas
+                const autoresLower = autores.map(a => a.trim().toLowerCase());
+                const autoresUnicos = [...new Set(autoresLower)];
+                
+                // Verificar duplicados (insensible a mayúsculas/minúsculas)
+                if (autoresUnicos.length !== autores.length) {
+                    // Encontrar los duplicados (insensible a mayúsculas/minúsculas) pero mantener el formato original
+                    const duplicados = [];
+                    const vistos = new Set();
+                    
+                    for (const autor of autores) {
+                        const autorLower = autor.trim().toLowerCase();
+                        if (vistos.has(autorLower)) {
+                            // Si ya vimos este autor (en minúsculas) pero con diferente formato
+                            const yaAgregado = duplicados.some(d => d.toLowerCase() === autorLower);
+                            if (!yaAgregado) {
+                                duplicados.push(autor);
+                            }
+                        } else {
+                            vistos.add(autorLower);
+                        }
+                    }
+                    
+                    errores.autores.push(`Autores duplicados: ${duplicados.join(', ')}`);
+                }
+                
+                // Verificar existencia de autores en la base de datos
+                if (autores.length > 0 && !autoresVacios) {
+                    const autoresExistentes = await mongoose.connection.collection('Autores').find({
+                        nombre: { $in: autores.map(a => a.trim()) }
+                    }).toArray();
+                    
+                    // Mantener el formato original de los autores no encontrados
+                    const autoresInvalidos = [];
+                    const vistos = new Set();
+                    
+                    for (const autor of autores) {
+                        const autorLower = autor.trim().toLowerCase();
+                        if (!vistos.has(autorLower) && 
+                            !autoresExistentes.some(ae => ae.nombre.toLowerCase() === autorLower)) {
+                            autoresInvalidos.push(autor);
+                            vistos.add(autorLower);
+                        }
+                    }
+                    
+                    if (autoresInvalidos.length > 0) {
+                        errores.autores.push(`Autores no encontrados: ${autoresInvalidos.join(', ')}`);
+                    }
+                }
+                
+                // Si no hay errores, eliminar el array
+                if (errores.autores.length === 0) {
+                    delete errores.autores;
+                }
+            }
+        }
+
+        // Si hay errores de validación, devolverlos
+        if (Object.keys(errores).length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Error de validación',
+                errors: errores
+            });
+        }
+
+        // Preparar los datos para actualizar
+        const actualizacion = {};
+        if (titulo !== undefined) actualizacion.titulo = titulo.trim();
+        if (fecha_publicacion !== undefined) actualizacion.fecha_publicacion = new Date(fecha_publicacion);
+        if (sinopsis !== undefined) actualizacion.sinopsis = sinopsis.trim();
+        if (paginas !== undefined) actualizacion.paginas = parseInt(paginas, 10);
+        if (generos !== undefined) actualizacion.generos = generos.map(g => g.trim());
+        if (autores !== undefined) actualizacion.autores = autores;
+        if (disponibilidad !== undefined) actualizacion.disponibilidad = disponibilidad;
+
+        // Actualizar el libro
+        const libroActualizado = await Libro.findByIdAndUpdate(
+            id, 
+            actualizacion,
+            { new: true, runValidators: true }
+        );
+
+        res.status(200).json({
+            success: true,
+            message: 'Libro actualizado exitosamente',
+            data: libroActualizado
+        });
+    } catch (error) {
+        console.error('Error al actualizar libro:', error);
+        res.status(500).json({
+            success: false,
+            error: formatError(error)
+        });
+    }
+};
