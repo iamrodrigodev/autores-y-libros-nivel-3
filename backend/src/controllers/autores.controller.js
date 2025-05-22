@@ -252,21 +252,37 @@ exports.eliminarAutor = async (req, res) => {
         }
 
         const nombreAutor = autor.nombre;
+        
+        // Obtener la cantidad de libros que serán actualizados
+        const libros = await mongoose.connection.collection('Libros')
+            .find({ autores: nombreAutor })
+            .toArray();
+        
+        // Eliminar el autor
         await Autor.findByIdAndDelete(req.params.id);
 
-        await mongoose.connection.collection('Libros').updateMany(
-            { autores: nombreAutor },
-            { $pull: { autores: nombreAutor } }
-        );
+        // Actualizar los libros que tenían este autor
+        if (libros.length > 0) {
+            await mongoose.connection.collection('Libros').updateMany(
+                { autores: nombreAutor },
+                { $pull: { autores: nombreAutor } }
+            );
+
+            return res.status(200).json({
+                success: true,
+                message: `Autor eliminado exitosamente y actualizados ${libros.length} libro(s)`
+            });
+        }
 
         res.status(200).json({
             success: true,
-            message: 'Autor eliminado exitosamente y actualizados los libros relacionados'
+            message: 'Autor eliminado exitosamente (no había libros para actualizar)'
         });
     } catch (error) {
+        console.error('Error al eliminar autor:', error);
         res.status(500).json({
             success: false,
-            error: formatError(error)
+            error: 'Error interno del servidor al eliminar el autor'
         });
     }
 };

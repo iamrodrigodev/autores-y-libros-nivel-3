@@ -168,74 +168,102 @@ const obtenerLibrosPorGenero = async (req, res) => {
 // Controlador para actualizar un género
 const actualizarGenero = async (req, res) => {
     try {
-        const { nombre, descripcion } = req.body;
-        const generoId = req.params.id;
+        const { id } = req.params;
         
-        // Validar datos
-        const errores = validarDatosGenero(nombre, descripcion);
-        if (errores.length > 0) {
+        // Verificar longitud del ID
+        if (id.length !== 24) {
             return res.status(400).json({
                 success: false,
-                message: 'Error de validación',
-                errors: errores
+                error: `${id} no es un ID válido`
             });
         }
 
-        // Verificar si el género existe
-        const generoExistente = await Genero.findById(generoId);
-        if (!generoExistente) {
+        // Verificar si el ID es un ObjectId de MongoDB válido
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                success: false,
+                error: `${id} no es un ID válido`
+            });
+        }
+
+        const { nombre, descripcion } = req.body;
+        
+        // Obtener el género actual primero
+        const genero = await Genero.findById(id);
+        if (!genero) {
             return res.status(404).json({
                 success: false,
-                message: 'Género no encontrado'
+                error: `No existe un género con ese ID`
             });
         }
 
-        // Verificar si ya existe otro género con el mismo nombre
-        if (nombre && nombre.trim().toLowerCase() !== generoExistente.nombre.toLowerCase()) {
-            const generoConMismoNombre = await Genero.findOne({ 
-                _id: { $ne: generoId },
-                nombre: { $regex: new RegExp(`^${nombre.trim()}$`, 'i') } 
+        // Guardar el nombre antiguo para actualizar los libros
+        const nombreAnterior = genero.nombre;
+        let librosActualizados = false;
+
+        // Si se está cambiando el nombre, verificar que no exista otro con el mismo nombre
+        if (nombre && nombre !== nombreAnterior) {
+            const generoExistente = await Genero.findOne({ 
+                nombre: { $regex: new RegExp(`^${nombre.trim()}$`, 'i') },
+                _id: { $ne: id }
             });
             
-            if (generoConMismoNombre) {
+            if (generoExistente) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Ya existe otro género con este nombre'
+                    error: 'Ya existe un género con ese nombre'
                 });
             }
         }
 
-        const updateData = {};
-        if (nombre) updateData.nombre = nombre.trim();
-        if (descripcion) updateData.descripcion = descripcion.trim();
+        // Actualizar solo los campos proporcionados
+        if (nombre) genero.nombre = nombre.trim();
+        if (descripcion !== undefined) genero.descripcion = descripcion.trim();
 
-        // Guardar el nombre anterior para actualizar en los libros
-        const nombreAnterior = generoExistente.nombre;
-        const actualizarNombre = nombre && nombre.trim() !== nombreAnterior;
+        // Guardar el género actualizado
+        const generoActualizado = await genero.save();
 
-        const generoActualizado = await Genero.findByIdAndUpdate(
-            generoId,
-            updateData,
-            { new: true, runValidators: true }
-        );
+        if (!generoActualizado) {
+            return res.status(500).json({
+                success: false,
+                error: 'No se pudo actualizar el género'
+            });
+        }
 
-        // Si se actualizó el nombre, actualizar también en la colección de libros
-        if (actualizarNombre) {
-            await mongoose.connection.collection('Libros').updateMany(
-                { generos: nombreAnterior },
-                { $set: { 'generos.$': nombre.trim() } }
-            );
+        // Si se cambió el nombre del género, actualizar los libros relacionados
+        if (nombre && nombre !== nombreAnterior) {
+            // Obtener todos los libros que tienen el género antiguo
+            const libros = await mongoose.connection.collection('Libros')
+                .find({ generos: nombreAnterior })
+                .toArray();
+
+            // Actualizar cada libro individualmente
+            for (const libro of libros) {
+                const nuevosGeneros = libro.generos.map(gen => 
+                    gen === nombreAnterior ? nombre : gen
+                );
+                
+                await mongoose.connection.collection('Libros').updateOne(
+                    { _id: libro._id },
+                    { $set: { generos: nuevosGeneros } }
+                );
+            }
+            
+            librosActualizados = libros.length > 0;
         }
 
         res.status(200).json({
             success: true,
-            message: 'Género actualizado exitosamente',
+            message: librosActualizados 
+                ? 'Género actualizado exitosamente y libros relacionados actualizados'
+                : 'Género actualizado exitosamente',
             data: generoActualizado
         });
     } catch (error) {
-        res.status(400).json({
+        console.error('Error al actualizar género:', error);
+        res.status(500).json({
             success: false,
-            error: formatError(error)
+            error: 'Error interno del servidor al actualizar el género'
         });
     }
 };
@@ -243,37 +271,70 @@ const actualizarGenero = async (req, res) => {
 // Controlador para eliminar un género
 const eliminarGenero = async (req, res) => {
     try {
-        const genero = await Genero.findById(req.params.id);
+        const { id } = req.params;
+        
+        // Verificar longitud del ID
+        if (id.length !== 24) {
+            return res.status(400).json({
+                success: false,
+                error: `${id} no es un ID válido`
+            });
+        }
+
+        // Verificar si el ID es un ObjectId de MongoDB válido
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                success: false,
+                error: `${id} no es un ID válido`
+            });
+        }
+
+        const genero = await Genero.findById(id);
         
         if (!genero) {
             return res.status(404).json({
                 success: false,
-                message: 'Género no encontrado'
+                error: `No existe un género con ese ID`
             });
         }
 
-        // Verificar si hay libros con este género
-        const librosConGenero = await mongoose.connection.collection('Libros')
-            .countDocuments({ generos: genero.nombre });
+        // Obtener el nombre del género para actualizar los libros
+        const nombreGenero = genero.nombre;
 
-        if (librosConGenero > 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'No se puede eliminar el género porque tiene libros asociados',
-                librosAsociados: librosConGenero
+        // Eliminar el género
+        await Genero.findByIdAndDelete(id);
+
+        // Actualizar los libros que tenían este género
+        const libros = await mongoose.connection.collection('Libros')
+            .find({ generos: nombreGenero })
+            .toArray();
+
+        // Si hay libros con este género, actualizarlos
+        if (libros.length > 0) {
+            for (const libro of libros) {
+                const nuevosGeneros = libro.generos.filter(gen => gen !== nombreGenero);
+                
+                await mongoose.connection.collection('Libros').updateOne(
+                    { _id: libro._id },
+                    { $set: { generos: nuevosGeneros } }
+                );
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: `Género eliminado exitosamente y actualizados ${libros.length} libro(s)`
             });
         }
-
-        await Genero.findByIdAndDelete(req.params.id);
 
         res.status(200).json({
             success: true,
             message: 'Género eliminado exitosamente'
         });
     } catch (error) {
+        console.error('Error al eliminar género:', error);
         res.status(500).json({
             success: false,
-            error: formatError(error)
+            error: 'Error interno del servidor al eliminar el género'
         });
     }
 };
