@@ -60,10 +60,6 @@ GeneroSchema.post('save', function(error, doc, next) {
     }
 });
 
-// Aplicar middleware de actualización de fecha
-const { actualizarFechaActualizacion } = require('../middlewares/generos.middleware');
-GeneroSchema.pre('save', actualizarFechaActualizacion);
-
 // Crear el modelo para Genero
 const Genero = mongoose.model('Genero', GeneroSchema, 'Generos');
 

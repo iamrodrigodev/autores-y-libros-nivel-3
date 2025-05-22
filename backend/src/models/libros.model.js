@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
-const { formatearDatos } = require('../middlewares/libros.middleware');
 
 // Esquema del libro
 const LibroSchema = new Schema({
@@ -39,10 +38,6 @@ const LibroSchema = new Schema({
     validateBeforeSave: false,
     versionKey: false // Deshabilitar __v
 });
-
-// Aplicar middleware de formateo de datos
-LibroSchema.pre('save', formatearDatos);
-LibroSchema.pre('findOneAndUpdate', formatearDatos);
 
 // Crear el modelo con el nombre de colección explícito
 const Libro = mongoose.model('Libro', LibroSchema, 'Libros');

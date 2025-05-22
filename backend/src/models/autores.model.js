@@ -4,9 +4,6 @@ const { Schema } = mongoose;
 // Importar la conexión a la base de datos
 require('../config/database');
 
-// Importar middlewares
-const { formatearDatos } = require('../middlewares/autores.middleware');
-
 // Esquema de Autor
 const AutorSchema = new Schema({
     nombre: { 
@@ -24,13 +21,10 @@ const AutorSchema = new Schema({
         trim: true
     }
 }, { 
-    // Deshabilitar la validación automática de Mongoose
+    // Deshabilitar la validación automática de Mongoose y los timestamps
+    timestamps: false,
     validateBeforeSave: false
 });
-
-// Aplicar middleware para formatear datos
-AutorSchema.pre('save', formatearDatos);
-AutorSchema.pre('findOneAndUpdate', formatearDatos);
 
 // Crear el modelo para Autor
 const Autor = mongoose.model('Autor', AutorSchema, 'Autores');

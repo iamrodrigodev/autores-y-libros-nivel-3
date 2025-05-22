@@ -214,6 +214,7 @@ exports.actualizarAutor = async (req, res) => {
 
         // Obtener el autor actual primero
         const autor = await Autor.findById(id);
+        
         if (!autor) {
             return res.status(404).json({
                 success: false,
@@ -226,7 +227,7 @@ exports.actualizarAutor = async (req, res) => {
         if (nombre !== undefined) {
             if (nombre.trim() === '') {
                 errores.push('El nombre no puede estar vacío');
-            } else if (nombre !== autor.nombre) {
+            } else if (autor && nombre !== autor.nombre) {
                 // Solo validar unicidad si el nombre cambió
                 const nombreExistente = await mongoose.connection.collection('Autores').findOne({ 
                     _id: { $ne: new mongoose.Types.ObjectId(id) },
@@ -287,23 +288,59 @@ exports.actualizarAutor = async (req, res) => {
         let librosActualizados = false;
         if (nombre && nombre !== autor.nombre) {
             try {
-                await mongoose.connection.collection('Libros').updateMany(
-                    { autores: autor.nombre },
-                    { $set: { 'autores.$': nombre.trim() } }
-                );
-                librosActualizados = true;
+                // Verificar nuevamente que tengamos el nombre del autor
+                if (autor && autor.nombre) {
+                    // 1. Primero obtenemos todos los libros que tienen al autor
+                    const librosConAutor = await mongoose.connection.collection('Libros')
+                        .find({ autores: autor.nombre })
+                        .toArray();
+                    
+                    // 2. Actualizamos cada libro individualmente
+                    const actualizaciones = librosConAutor.map(libro => {
+                        const nuevosAutores = libro.autores.map(autorLibro => 
+                            autorLibro === autor.nombre ? nombre.trim() : autorLibro
+                        );
+                        
+                        return mongoose.connection.collection('Libros').updateOne(
+                            { _id: libro._id },
+                            { $set: { autores: nuevosAutores } }
+                        );
+                    });
+                    
+                    // 3. Esperamos a que todas las actualizaciones terminen
+                    await Promise.all(actualizaciones);
+                    librosActualizados = true;
+                } else {
+                    console.warn('No se pudo obtener el nombre actual del autor para actualizar los libros');
+                }
             } catch (error) {
                 console.error('Error al actualizar libros del autor:', error);
                 // No fallar la operación si no se pueden actualizar los libros
             }
         }
 
-        const respuesta = {
+        let respuesta = {
             success: true,
             message: 'Autor actualizado exitosamente',
-            data: autorActualizado,
-            librosActualizados: librosActualizados ? 'Se actualizaron los libros del autor' : 'No se actualizaron libros'
+            data: autorActualizado
         };
+        
+        // Si se actualizaron libros, agregar información al mensaje
+        if (librosActualizados) {
+            const librosConAutor = await mongoose.connection.collection('Libros')
+                .find({ autores: nombre.trim() })
+                .toArray();
+                
+            const cantidad = librosConAutor.length;
+            const mensajeLibros = cantidad === 1 ? 'libro' : 'libros';
+            respuesta.librosActualizados = {
+                mensaje: `Se actualizaron los libros del autor`,
+                cantidad: cantidad,
+                libros: librosConAutor.map(libro => libro.titulo)
+            };
+        } else {
+            respuesta.librosActualizados = 'No se actualizaron libros';
+        }
 
         res.status(200).json(respuesta);
     } catch (error) {
@@ -345,6 +382,12 @@ exports.eliminarAutor = async (req, res) => {
         // Eliminar el autor
         await Autor.findByIdAndDelete(req.params.id);
 
+        // Preparar la respuesta base
+        const respuesta = {
+            success: true,
+            message: 'Autor eliminado exitosamente'
+        };
+
         // Actualizar los libros que tenían este autor
         if (libros.length > 0) {
             await mongoose.connection.collection('Libros').updateMany(
@@ -352,16 +395,19 @@ exports.eliminarAutor = async (req, res) => {
                 { $pull: { autores: nombreAutor } }
             );
 
-            return res.status(200).json({
-                success: true,
-                message: `Autor eliminado exitosamente y actualizados ${libros.length} libro(s)`
-            });
+            const cantidad = libros.length;
+            const mensajeLibros = cantidad === 1 ? 'libro' : 'libros';
+            
+            respuesta.librosActualizados = {
+                mensaje: `Se eliminó el autor de ${cantidad} ${mensajeLibros}`,
+                cantidad: cantidad,
+                libros: libros.map(libro => libro.titulo)
+            };
+        } else {
+            respuesta.librosActualizados = 'No se actualizaron libros';
         }
 
-        res.status(200).json({
-            success: true,
-            message: 'Autor eliminado exitosamente (no había libros para actualizar)'
-        });
+        res.status(200).json(respuesta);
     } catch (error) {
         console.error('Error al eliminar autor:', error);
         res.status(500).json({
