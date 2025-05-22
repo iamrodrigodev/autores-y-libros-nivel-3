@@ -197,7 +197,7 @@ exports.actualizarAutor = async (req, res) => {
     try {
         const { id } = req.params;
         const { nombre, fecha_nacimiento, nacionalidad } = req.body;
-        const errores = [];
+        const errores = {}; // Cambiado de array a objeto
         const now = new Date();
 
         // Verificar si el ID es válido
@@ -222,7 +222,9 @@ exports.actualizarAutor = async (req, res) => {
 
         // 1. Validar campos si se están enviando
         if (nombre !== undefined) {
-            if (nombre.trim() === '') {
+            if (nombre === null || nombre === '') {
+                errores.nombre = 'El nombre es obligatorio';
+            } else if (typeof nombre === 'string' && nombre.trim() === '') {
                 errores.nombre = 'El nombre no puede estar vacío';
             } else {
                 // Validar nombre único (insensible a mayúsculas/minúsculas)
@@ -247,7 +249,9 @@ exports.actualizarAutor = async (req, res) => {
         }
 
         if (nacionalidad !== undefined) {
-            if (nacionalidad.trim() === '') {
+            if (nacionalidad === null || nacionalidad === '') {
+                errores.nacionalidad = 'La nacionalidad es obligatoria';
+            } else if (typeof nacionalidad === 'string' && nacionalidad.trim() === '') {
                 errores.nacionalidad = 'La nacionalidad no puede estar vacía';
             } else if (nacionalidad.trim().includes(',')) {
                 errores.nacionalidad = 'Debe contener solo una nacionalidad';

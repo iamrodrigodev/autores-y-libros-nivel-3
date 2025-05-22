@@ -4,7 +4,7 @@ const autoresController = require('../controllers/autores.controller');
 //const { authMiddleware } = require('../../auth/auth');
 
 // Ruta para crear un nuevo autor
-router.post('/crear_autor', autoresController.crearAutor);
+router.post('/', autoresController.crearAutor);
 
 // Ruta para listar todos los autores
 router.get('/', autoresController.obtenerAutores);
@@ -16,7 +16,7 @@ router.get('/:id', autoresController.obtenerAutorPorId);
 router.get('/:id/libros', autoresController.obtenerLibrosDeAutor);
 
 // Ruta para actualizar un autor
-router.put('/actualizar/:id', autoresController.actualizarAutor);
+router.put('/:id', autoresController.actualizarAutor);
 
 // Ruta para eliminar un autor
 router.delete('/:id', autoresController.eliminarAutor);

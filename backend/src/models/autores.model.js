@@ -18,9 +18,26 @@ const AutorSchema = new Schema({
         trim: true
     }
 }, { 
-    // Deshabilitar la validación automática de Mongoose y los timestamps
+    // Configuración del esquema
     timestamps: false,
-    validateBeforeSave: false
+    validateBeforeSave: false,
+    versionKey: false, // Deshabilita el campo __v
+    toJSON: { 
+        virtuals: true,
+        transform: function(doc, ret) {
+            delete ret._id; // Opcional: eliminar _id si no lo quieres en la respuesta
+            delete ret.__v;
+            return ret;
+        }
+    },
+    toObject: {
+        virtuals: true,
+        transform: function(doc, ret) {
+            delete ret._id; // Opcional: eliminar _id si no lo quieres en la respuesta
+            delete ret.__v;
+            return ret;
+        }
+    }
 });
 
 // Crear el modelo para Autor
