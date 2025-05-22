@@ -15,4 +15,10 @@ router.get('/:id', librosController.obtenerLibroPorId);
 // Ruta para actualizar un libro
 router.put('/:id', librosController.actualizarLibro);
 
+// Ruta para agregar autores a un libro
+router.post('/:id/autores', librosController.agregarAutores);
+
+// Ruta para agregar géneros a un libro
+router.post('/:id/generos', librosController.agregarGeneros);
+
 module.exports = router;

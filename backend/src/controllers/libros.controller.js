@@ -637,3 +637,273 @@ exports.actualizarLibro = async (req, res) => {
         });
     }
 };
+
+// Agregar autores a un libro existente
+exports.agregarAutores = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { autores } = req.body;
+        const errores = [];
+
+        // Validar que se proporcionen autores
+        if (!autores || !Array.isArray(autores) || autores.length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'Debe proporcionar al menos un autor'
+            });
+        }
+
+        // Verificar si el libro existe
+        const libro = await Libro.findById(id);
+        if (!libro) {
+            return res.status(404).json({
+                success: false,
+                error: 'Libro no encontrado con el ID proporcionado'
+            });
+        }
+
+        // Verificar si hay autores vacíos
+        const autoresVacios = autores.some(autor => !autor || typeof autor !== 'string' || autor.trim() === '');
+        if (autoresVacios) {
+            errores.push('Los nombres de autores no pueden estar vacíos');
+        }
+
+        // Convertir a minúsculas para comparación insensible a mayúsculas
+        const autoresLower = autores.map(autor => autor.trim().toLowerCase());
+        const autoresUnicos = [...new Set(autoresLower)];
+
+        // Verificar duplicados en la solicitud
+        if (autoresUnicos.length !== autores.length) {
+            const duplicados = [];
+            const vistos = new Set();
+            
+            for (const autor of autores) {
+                const autorLower = autor.trim().toLowerCase();
+                if (vistos.has(autorLower)) {
+                    const yaAgregado = duplicados.some(d => d.toLowerCase() === autorLower);
+                    if (!yaAgregado) {
+                        duplicados.push(autor);
+                    }
+                } else {
+                    vistos.add(autorLower);
+                }
+            }
+            
+            errores.push(`Autores duplicados en la solicitud: ${duplicados.join(', ')}`);
+        }
+
+        // Verificar existencia de autores en la base de datos
+        const autoresExistentes = await mongoose.connection.collection('Autores').find({
+            nombre: { $in: autores.map(a => a.trim()) }
+        }).toArray();
+
+        // Verificar qué autores no existen
+        const autoresInvalidos = [];
+        const vistos = new Set();
+        
+        for (const autor of autores) {
+            const autorLower = autor.trim().toLowerCase();
+            if (!vistos.has(autorLower) && 
+                !autoresExistentes.some(ae => ae.nombre.toLowerCase() === autorLower)) {
+                autoresInvalidos.push(autor);
+                vistos.add(autorLower);
+            }
+        }
+        
+        if (autoresInvalidos.length > 0) {
+            errores.push(`Autores no encontrados: ${autoresInvalidos.join(', ')}`);
+        }
+
+        // Verificar si ya están asignados al libro
+        const autoresActualesLower = libro.autores.map(a => a.toLowerCase());
+        const autoresDuplicados = [];
+        
+        for (const autor of autoresExistentes) {
+            const autorLower = autor.nombre.toLowerCase();
+            if (autoresActualesLower.includes(autorLower)) {
+                autoresDuplicados.push(autor.nombre);
+            }
+        }
+        
+        if (autoresDuplicados.length > 0) {
+            errores.push(`Los siguientes autores ya están asignados al libro: ${autoresDuplicados.join(', ')}`);
+        }
+
+        // Si hay errores, devolverlos
+        if (errores.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Error de validación',
+                errors: errores
+            });
+        }
+
+        // Agregar los nuevos autores al libro (sin duplicados)
+        const nuevosAutores = [...new Set([
+            ...libro.autores,
+            ...autoresExistentes.map(a => a.nombre)
+        ])];
+
+        // Actualizar el libro
+        const libroActualizado = await Libro.findByIdAndUpdate(
+            id,
+            { autores: nuevosAutores },
+            { new: true, runValidators: true }
+        );
+
+        // Obtener el libro actualizado con toda su información
+        const libroCompleto = await Libro.findById(id).populate('autores');
+        
+        res.status(200).json({
+            success: true,
+            message: 'Autores agregados exitosamente',
+            data: {
+                libro: libroCompleto,
+                autoresAgregados: autoresExistentes.map(a => a.nombre),
+                totalAutores: nuevosAutores.length
+            }
+        });
+
+    } catch (error) {
+        console.error('Error al agregar autores al libro:', error);
+        res.status(500).json({
+            success: false,
+            error: formatError(error)
+        });
+    }
+};
+
+// Agregar géneros a un libro existente
+exports.agregarGeneros = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { generos } = req.body;
+        const errores = [];
+
+        // Validar que se proporcionen géneros
+        if (!generos || !Array.isArray(generos) || generos.length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'Debe proporcionar al menos un género'
+            });
+        }
+
+        // Verificar si el libro existe
+        const libro = await Libro.findById(id);
+        if (!libro) {
+            return res.status(404).json({
+                success: false,
+                error: 'Libro no encontrado con el ID proporcionado'
+            });
+        }
+
+        // Verificar si hay géneros vacíos
+        const generosVacios = generos.some(genero => !genero || typeof genero !== 'string' || genero.trim() === '');
+        if (generosVacios) {
+            errores.push('Los nombres de géneros no pueden estar vacíos');
+        }
+
+        // Convertir a minúsculas para comparación insensible a mayúsculas
+        const generosLower = generos.map(genero => genero.trim().toLowerCase());
+        const generosUnicos = [...new Set(generosLower)];
+
+        // Verificar duplicados en la solicitud
+        if (generosUnicos.length !== generos.length) {
+            const duplicados = [];
+            const vistos = new Set();
+            
+            for (const genero of generos) {
+                const generoLower = genero.trim().toLowerCase();
+                if (vistos.has(generoLower)) {
+                    const yaAgregado = duplicados.some(d => d.toLowerCase() === generoLower);
+                    if (!yaAgregado) {
+                        duplicados.push(genero);
+                    }
+                } else {
+                    vistos.add(generoLower);
+                }
+            }
+            
+            errores.push(`Géneros duplicados en la solicitud: ${duplicados.join(', ')}`);
+        }
+
+        // Verificar existencia de géneros en la base de datos
+        const generosExistentes = await mongoose.connection.collection('Generos').find({
+            nombre: { $in: generos.map(g => g.trim()) }
+        }).toArray();
+
+        // Verificar qué géneros no existen
+        const generosInvalidos = [];
+        const vistos = new Set();
+        
+        for (const genero of generos) {
+            const generoLower = genero.trim().toLowerCase();
+            if (!vistos.has(generoLower) && 
+                !generosExistentes.some(ge => ge.nombre.toLowerCase() === generoLower)) {
+                generosInvalidos.push(genero);
+                vistos.add(generoLower);
+            }
+        }
+        
+        if (generosInvalidos.length > 0) {
+            errores.push(`Géneros no encontrados: ${generosInvalidos.join(', ')}`);
+        }
+
+        // Verificar si ya están asignados al libro
+        const generosActualesLower = libro.generos.map(g => g.toLowerCase());
+        const generosDuplicados = [];
+        
+        for (const genero of generosExistentes) {
+            const generoLower = genero.nombre.toLowerCase();
+            if (generosActualesLower.includes(generoLower)) {
+                generosDuplicados.push(genero.nombre);
+            }
+        }
+        
+        if (generosDuplicados.length > 0) {
+            errores.push(`Los siguientes géneros ya están asignados al libro: ${generosDuplicados.join(', ')}`);
+        }
+
+        // Si hay errores, devolverlos
+        if (errores.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Error de validación',
+                errors: errores
+            });
+        }
+
+        // Agregar los nuevos géneros al libro (sin duplicados)
+        const nuevosGeneros = [...new Set([
+            ...libro.generos,
+            ...generosExistentes.map(g => g.nombre)
+        ])];
+
+        // Actualizar el libro
+        const libroActualizado = await Libro.findByIdAndUpdate(
+            id,
+            { generos: nuevosGeneros },
+            { new: true, runValidators: true }
+        );
+
+        // Obtener el libro actualizado con toda su información
+        const libroCompleto = await Libro.findById(id);
+        
+        res.status(200).json({
+            success: true,
+            message: 'Géneros agregados exitosamente',
+            data: {
+                libro: libroCompleto.titulo,
+                generosAgregados: generosExistentes.map(g => g.nombre),
+                totalGeneros: nuevosGeneros.length
+            }
+        });
+
+    } catch (error) {
+        console.error('Error al agregar géneros al libro:', error);
+        res.status(500).json({
+            success: false,
+            error: formatError(error)
+        });
+    }
+};
