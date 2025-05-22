@@ -1,23 +1,23 @@
-// Middleware para actualizar la fecha de actualización antes de guardar un libro
-const actualizarFechaActualizacion = function(next) {
-    this.updatedAt = new Date();
-    next();
-};
-
-// Middleware para formatear los datos antes de guardar
+// Middleware para formatear los datos antes de guardar o actualizar
 const formatearDatos = function(next) {
-    // Asegurarse de que el título tenga la primera letra en mayúscula
-    if (this.titulo) {
-        this.titulo = this.titulo.trim();
-        this.titulo = this.titulo.charAt(0).toUpperCase() + this.titulo.slice(1).toLowerCase();
+    const doc = this.op === 'findOneAndUpdate' ? this.getUpdate().$set : this;
+    
+    // Formatear título (primera letra en mayúscula, resto en minúscula)
+    if (doc.titulo) {
+        doc.titulo = doc.titulo.trim()
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ');
     }
     
-    // Asegurarse de que la sinopsis esté formateada correctamente
-    if (this.sinopsis) {
-        this.sinopsis = this.sinopsis.trim();
-        this.sinopsis = this.sinopsis.charAt(0).toUpperCase() + this.sinopsis.slice(1);
-        if (!this.sinopsis.endsWith('.')) {
-            this.sinopsis += '.';
+    // Formatear sinopsis (primera letra en mayúscula y punto al final)
+    if (doc.sinopsis) {
+        doc.sinopsis = doc.sinopsis.trim();
+        if (doc.sinopsis.length > 0) {
+            doc.sinopsis = doc.sinopsis.charAt(0).toUpperCase() + doc.sinopsis.slice(1);
+            if (!doc.sinopsis.endsWith('.')) {
+                doc.sinopsis += '.';
+            }
         }
     }
     
@@ -25,6 +25,5 @@ const formatearDatos = function(next) {
 };
 
 module.exports = {
-    actualizarFechaActualizacion,
     formatearDatos
 };

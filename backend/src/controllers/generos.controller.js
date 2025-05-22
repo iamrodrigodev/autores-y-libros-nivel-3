@@ -93,6 +93,7 @@ const obtenerGeneros = async (_req, res) => {
         res.status(200).json({
             success: true,
             message: 'Géneros encontrados',
+            count: generos.length,
             data: generos
         });
     } catch (error) {
