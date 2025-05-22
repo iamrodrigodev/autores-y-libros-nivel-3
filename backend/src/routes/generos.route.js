@@ -4,7 +4,7 @@ const generosController = require('../controllers/generos.controller');
 // const { authMiddleware } = require('../../auth/auth');
 
 // Ruta para crear un nuevo género
-router.post('/crear_genero', generosController.crearGenero);
+router.post('/', generosController.crearGenero);
 
 // Ruta para listar todos los géneros
 router.get('/', generosController.obtenerGeneros);
@@ -16,7 +16,7 @@ router.get('/:id', generosController.obtenerGeneroPorId);
 router.get('/:id/libros', generosController.obtenerLibrosPorGenero);
 
 // Ruta para actualizar un género
-router.put('/actualizar/:id', generosController.actualizarGenero);
+router.put('/:id', generosController.actualizarGenero);
 
 // Ruta para eliminar un género
 router.delete('/:id', generosController.eliminarGenero);
