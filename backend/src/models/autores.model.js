@@ -24,7 +24,7 @@ const AutorSchema = new Schema({
     versionKey: false, // Deshabilita el campo __v
     toJSON: { 
         virtuals: true,
-        transform: function(doc, ret) {
+        transform: function(_doc, ret) {
             delete ret._id; // Opcional: eliminar _id si no lo quieres en la respuesta
             delete ret.__v;
             return ret;
@@ -32,7 +32,7 @@ const AutorSchema = new Schema({
     },
     toObject: {
         virtuals: true,
-        transform: function(doc, ret) {
+        transform: function(_doc, ret) {
             delete ret._id; // Opcional: eliminar _id si no lo quieres en la respuesta
             delete ret.__v;
             return ret;
