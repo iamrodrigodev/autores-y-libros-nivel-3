@@ -18,7 +18,7 @@ const formatError = (error) => {
 };
 
 // Crear un nuevo libro
-exports.crearLibro = async (req, res) => {
+const crearLibro = async (req, res) => {
     try {
         const { 
             titulo, 
@@ -331,7 +331,7 @@ exports.crearLibro = async (req, res) => {
 };
 
 // Obtener todos los libros disponibles
-exports.obtenerLibros = async (_req, res) => {
+const obtenerLibros = async (_req, res) => {
     try {
         const libros = await Libro.find({ disponibilidad: true })
             .sort({ titulo: 1 })
@@ -364,7 +364,7 @@ exports.obtenerLibros = async (_req, res) => {
 };
 
 // Obtener libros no disponibles
-exports.obtenerLibrosNoDisponibles = async (_req, res) => {
+const obtenerLibrosNoDisponibles = async (_req, res) => {
     try {
         const libros = await Libro.find({ disponibilidad: false })
             .sort({ titulo: 1 })
@@ -397,7 +397,7 @@ exports.obtenerLibrosNoDisponibles = async (_req, res) => {
 };
 
 // Obtener un libro por ID
-exports.obtenerLibroPorId = async (req, res) => {
+const obtenerLibroPorId = async (req, res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
             return res.status(400).json({
@@ -430,7 +430,7 @@ exports.obtenerLibroPorId = async (req, res) => {
 };
 
 // Actualizar un libro existente
-exports.actualizarLibro = async (req, res) => {
+const actualizarLibro = async (req, res) => {
     try {
         const { id } = req.params;
         const { 
@@ -686,7 +686,7 @@ exports.actualizarLibro = async (req, res) => {
 };
 
 // Agregar autores a un libro existente
-exports.agregarAutores = async (req, res) => {
+const agregarAutores = async (req, res) => {
     try {
         const { id } = req.params;
         const { autores } = req.body;
@@ -821,7 +821,7 @@ exports.agregarAutores = async (req, res) => {
 };
 
 // Agregar géneros a un libro existente
-exports.agregarGeneros = async (req, res) => {
+const agregarGeneros = async (req, res) => {
     try {
         const { id } = req.params;
         const { generos } = req.body;
@@ -953,4 +953,16 @@ exports.agregarGeneros = async (req, res) => {
             error: formatError(error)
         });
     }
+};
+
+// Exportar controladores
+module.exports = {
+    crearLibro,
+    obtenerLibros,
+    obtenerLibrosNoDisponibles,
+    obtenerLibroPorId,
+    actualizarLibro,
+    agregarAutores,
+    agregarGeneros,
+    formatError
 };

@@ -13,7 +13,7 @@ const formatError = (error) => {
 };
 
 // Crear un nuevo autor
-exports.crearAutor = async (req, res) => {
+const crearAutor = async (req, res) => {
     try {
         const { nombre, fecha_nacimiento, nacionalidad } = req.body;
         const errores = {};
@@ -87,7 +87,7 @@ exports.crearAutor = async (req, res) => {
 };
 
 // Obtener todos los autores
-exports.obtenerAutores = async (_req, res) => {
+const obtenerAutores = async (_req, res) => {
     try {
         const autores = await Autor.find();
         
@@ -114,7 +114,7 @@ exports.obtenerAutores = async (_req, res) => {
 };
 
 // Obtener un autor por ID
-exports.obtenerAutorPorId = async (req, res) => {
+const obtenerAutorPorId = async (req, res) => {
     try {
         // Verificar si el ID es válido antes de hacer la consulta
         if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -146,7 +146,7 @@ exports.obtenerAutorPorId = async (req, res) => {
 };
 
 // Obtener libros de un autor
-exports.obtenerLibrosDeAutor = async (req, res) => {
+const obtenerLibrosDeAutor = async (req, res) => {
     try {
         // Verificar si el ID es válido antes de hacer la consulta
         if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -193,7 +193,7 @@ exports.obtenerLibrosDeAutor = async (req, res) => {
 };
 
 // Actualizar autor
-exports.actualizarAutor = async (req, res) => {
+const actualizarAutor = async (req, res) => {
     try {
         const { id } = req.params;
         const { nombre, fecha_nacimiento, nacionalidad } = req.body;
@@ -349,7 +349,7 @@ exports.actualizarAutor = async (req, res) => {
 };
 
 // Eliminar autor
-exports.eliminarAutor = async (req, res) => {
+const eliminarAutor = async (req, res) => {
     try {
         // Verificar si el ID es válido antes de hacer la consulta
         if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -411,4 +411,13 @@ exports.eliminarAutor = async (req, res) => {
             error: 'Error interno del servidor al eliminar el autor'
         });
     }
+};
+
+module.exports = {
+    crearAutor,
+    obtenerAutores,
+    obtenerAutorPorId,
+    obtenerLibrosDeAutor,
+    actualizarAutor,
+    eliminarAutor
 };
