@@ -2,21 +2,26 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 
+// Importar rutas
+const autoresRoutes = require('./src/routes/autores.route');
+
+// Importar configuración de la base de datos
 const database_mongo = require('./src/config/database');
 
 const app = express();
+
+// Middlewares
 app.use(cors());
 app.use(express.json());
 
-/*
-app.get('/ping', (_req, res) => {
-  res.json({ mensaje: 'pong' });
-}); */
+// Rutas
+app.use('/api/autores', autoresRoutes);
 
+// Iniciar servidor una vez que la conexión a la base de datos esté lista
 database_mongo.then(() => {
   const { name, host, port } = mongoose.connection;
   
-  console.log('Conexion a MongoDB exitosa');
+  console.log('Conexión a MongoDB exitosa');
   console.log(`Base de datos: ${name}`);
   console.log(`Host: ${host}`);
   console.log(`Puerto: ${port}`);
@@ -28,4 +33,5 @@ database_mongo.then(() => {
   });
 }).catch((err) => {
   console.error('Error al conectar a MongoDB:', err);
+  process.exit(1);
 });
