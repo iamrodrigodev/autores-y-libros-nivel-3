@@ -16,54 +16,51 @@ const formatError = (error) => {
 exports.crearAutor = async (req, res) => {
     try {
         const { nombre, fecha_nacimiento, nacionalidad } = req.body;
-        const errores = [];
+        const errores = {};
         const now = new Date();
 
         // 1. Validar campos requeridos
-        if (!nombre || nombre.trim() === '') errores.push('El nombre es obligatorio');
-        if (!fecha_nacimiento) errores.push('La fecha de nacimiento es obligatoria');
-        if (!nacionalidad || nacionalidad.trim() === '') errores.push('La nacionalidad es obligatoria');
+        if (!nombre || nombre.trim() === '') errores.nombre = 'El nombre es obligatorio';
+        if (!fecha_nacimiento) errores.fecha_nacimiento = 'La fecha de nacimiento es obligatoria';
+        if (!nacionalidad || nacionalidad.trim() === '') errores.nacionalidad = 'La nacionalidad es obligatoria';
 
-        // Si hay errores de campos requeridos, retornar de inmediato
-        if (errores.length > 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'Error de validación',
-                errors: errores
-            });
-        }
-
-        // 2. Validar formatos y valores
-        // Validar fecha
-        const fechaNac = new Date(fecha_nacimiento);
-        if (isNaN(fechaNac.getTime())) {
-            errores.push('La fecha de nacimiento no es válida');
-        } else if (fechaNac > now) {
-            errores.push('La fecha de nacimiento no puede ser futura');
+        // 2. Validar formatos y valores solo si los campos requeridos están presentes
+        if (fecha_nacimiento) {
+            const fechaNac = new Date(fecha_nacimiento);
+            if (isNaN(fechaNac.getTime())) {
+                errores.fecha_nacimiento = 'La fecha de nacimiento no es válida';
+            } else if (fechaNac > now) {
+                errores.fecha_nacimiento = 'La fecha de nacimiento no puede ser futura';
+            }
         }
 
         // Validar nacionalidad (solo una palabra)
-        if (nacionalidad.trim().includes(',')) {
-            errores.push('Debe contener solo una nacionalidad');
+        if (nacionalidad && nacionalidad.trim().includes(',')) {
+            errores.nacionalidad = 'Debe contener solo una nacionalidad';
         }
 
-        // Validar nombre único (insensible a mayúsculas/minúsculas)
-        const nombreExistente = await mongoose.connection.collection('Autores').findOne({ 
-            nombre: { $regex: new RegExp(`^${nombre.trim()}$`, 'i') } 
-        });
-        
-        if (nombreExistente) {
-            errores.push('Ya existe un autor con este nombre');
+        // Validar nombre único (insensible a mayúsculas/minúsculas) solo si el nombre es válido
+        if (nombre && nombre.trim() !== '') {
+            const nombreExistente = await mongoose.connection.collection('Autores').findOne({ 
+                nombre: { $regex: new RegExp(`^${nombre.trim()}$`, 'i') } 
+            });
+            
+            if (nombreExistente) {
+                errores.nombre = 'Ya existe un autor con este nombre';
+            }
         }
 
         // Si hay errores de validación, retornarlos
-        if (errores.length > 0) {
+        if (Object.keys(errores).length > 0) {
             return res.status(400).json({
                 success: false,
                 message: 'Error de validación',
                 errors: errores
             });
         }
+        
+        // Si llegamos aquí, crear la fecha de nacimiento
+        const fechaNac = new Date(fecha_nacimiento);
 
         // Crear el nuevo autor
         const nuevoAutor = new Autor({
@@ -84,7 +81,7 @@ exports.crearAutor = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error interno del servidor',
-            errors: [formatError(error)]
+            error: formatError(error)
         });
     }
 };
@@ -223,19 +220,19 @@ exports.actualizarAutor = async (req, res) => {
             });
         }
 
-        // 1. Validar campos opcionales si se proporcionan
+        // 1. Validar campos si se están enviando
         if (nombre !== undefined) {
             if (nombre.trim() === '') {
-                errores.push('El nombre no puede estar vacío');
-            } else if (autor && nombre !== autor.nombre) {
-                // Solo validar unicidad si el nombre cambió
+                errores.nombre = 'El nombre no puede estar vacío';
+            } else {
+                // Validar nombre único (insensible a mayúsculas/minúsculas)
                 const nombreExistente = await mongoose.connection.collection('Autores').findOne({ 
                     _id: { $ne: new mongoose.Types.ObjectId(id) },
                     nombre: { $regex: new RegExp(`^${nombre.trim()}$`, 'i') } 
                 });
                 
                 if (nombreExistente) {
-                    errores.push('Ya existe otro autor con este nombre');
+                    errores.nombre = 'Ya existe un autor con este nombre';
                 }
             }
         }
@@ -243,27 +240,22 @@ exports.actualizarAutor = async (req, res) => {
         if (fecha_nacimiento !== undefined) {
             const fechaNac = new Date(fecha_nacimiento);
             if (isNaN(fechaNac.getTime())) {
-                errores.push('La fecha de nacimiento no es válida');
+                errores.fecha_nacimiento = 'La fecha de nacimiento no es válida';
             } else if (fechaNac > now) {
-                errores.push('La fecha de nacimiento no puede ser futura');
+                errores.fecha_nacimiento = 'La fecha de nacimiento no puede ser futura';
             }
         }
 
         if (nacionalidad !== undefined) {
             if (nacionalidad.trim() === '') {
-                errores.push('La nacionalidad no puede estar vacía');
+                errores.nacionalidad = 'La nacionalidad no puede estar vacía';
             } else if (nacionalidad.trim().includes(',')) {
-                errores.push('Debe contener solo una nacionalidad');
+                errores.nacionalidad = 'Debe contener solo una nacionalidad';
             }
         }
 
-        // Si no hay campos para actualizar
-        if (Object.keys(req.body).length === 0) {
-            errores.push('No se proporcionaron datos para actualizar');
-        }
-
-        // Si hay errores de validación, retornarlos
-        if (errores.length > 0) {
+        // Si hay errores, retornarlos
+        if (Object.keys(errores).length > 0) {
             return res.status(400).json({
                 success: false,
                 message: 'Error de validación',
