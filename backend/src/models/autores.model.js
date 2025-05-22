@@ -18,7 +18,7 @@ const AutorSchema = new Schema({
                     }
                     return true;
                 } catch (error) {
-                    throw new Error(`Error al validar nombre: ${error.message}`);
+                    throw error;
                 }
             }
         }
@@ -52,7 +52,7 @@ const AutorSchema = new Schema({
         type: Date,
         default: Date.now
     }
-});
+}, { versionKey: false });
 
 // Importar middlewares
 const { actualizarFechaActualizacion } = require('../middlewares/autores.middleware');

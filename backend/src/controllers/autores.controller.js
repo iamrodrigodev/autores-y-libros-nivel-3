@@ -1,5 +1,16 @@
-const Autor = require('../models/autores.model');
+const { Autor } = require('../models/autores.model');
 const mongoose = require('mongoose');
+
+// Función para formatear mensajes de error
+const formatError = (error) => {
+    if (error.name === 'CastError') {
+        return 'El ID proporcionado no es válido';
+    }
+    if (error.name === 'ValidationError') {
+        return error.message.split(':').pop().trim();
+    }
+    return error.message;
+};
 
 // Crear un nuevo autor
 exports.crearAutor = async (req, res) => {
@@ -22,14 +33,13 @@ exports.crearAutor = async (req, res) => {
     } catch (error) {
         res.status(400).json({
             success: false,
-            message: 'Error al crear el autor',
-            error: error.message
+            error: formatError(error)
         });
     }
 };
 
 // Obtener todos los autores
-exports.obtenerAutores = async (req, res) => {
+exports.obtenerAutores = async (_req, res) => {
     try {
         const autores = await Autor.find();
         
@@ -49,8 +59,7 @@ exports.obtenerAutores = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: 'Error al buscar autores',
-            error: error.message
+            error: formatError(error)
         });
     }
 };
@@ -58,25 +67,31 @@ exports.obtenerAutores = async (req, res) => {
 // Obtener un autor por ID
 exports.obtenerAutorPorId = async (req, res) => {
     try {
+        // Verificar si el ID es válido antes de hacer la consulta
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({
+                success: false,
+                error: 'El ID proporcionado no es válido'
+            });
+        }
+
         const autor = await Autor.findById(req.params.id);
         
         if (!autor) {
             return res.status(404).json({
                 success: false,
-                message: 'Autor no encontrado'
+                error: 'No existe un autor con ese ID'
             });
         }
 
         res.status(200).json({
             success: true,
-            message: 'Autor encontrado',
             data: autor
         });
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: 'Error al buscar el autor',
-            error: error.message
+            error: formatError(error)
         });
     }
 };
@@ -84,12 +99,20 @@ exports.obtenerAutorPorId = async (req, res) => {
 // Obtener libros de un autor
 exports.obtenerLibrosDeAutor = async (req, res) => {
     try {
+        // Verificar si el ID es válido antes de hacer la consulta
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({
+                success: false,
+                error: 'El ID proporcionado no es válido'
+            });
+        }
+
         const autor = await Autor.findById(req.params.id);
         
         if (!autor) {
             return res.status(404).json({
                 success: false,
-                message: 'Autor no encontrado'
+                error: 'No existe un autor con ese ID'
             });
         }
 
@@ -113,8 +136,7 @@ exports.obtenerLibrosDeAutor = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: 'Error al buscar los libros del autor',
-            error: error.message
+            error: formatError(error)
         });
     }
 };
@@ -122,6 +144,14 @@ exports.obtenerLibrosDeAutor = async (req, res) => {
 // Actualizar autor
 exports.actualizarAutor = async (req, res) => {
     try {
+        // Verificar si el ID es válido antes de hacer la consulta
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({
+                success: false,
+                error: 'El ID proporcionado no es válido'
+            });
+        }
+
         const { nombre, descripcion } = req.body;
 
         const autorActualizado = await Autor.findByIdAndUpdate(
@@ -150,8 +180,7 @@ exports.actualizarAutor = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: 'Error al actualizar el autor o los libros relacionados',
-            error: error.message
+            error: formatError(error)
         });
     }
 };
@@ -159,12 +188,20 @@ exports.actualizarAutor = async (req, res) => {
 // Eliminar autor
 exports.eliminarAutor = async (req, res) => {
     try {
+        // Verificar si el ID es válido antes de hacer la consulta
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({
+                success: false,
+                error: 'El ID proporcionado no es válido'
+            });
+        }
+
         const autor = await Autor.findById(req.params.id);
         
         if (!autor) {
             return res.status(404).json({
                 success: false,
-                message: 'Autor no encontrado'
+                error: 'No existe un autor con ese ID'
             });
         }
 
@@ -183,8 +220,7 @@ exports.eliminarAutor = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: 'Error al eliminar el autor',
-            error: error.message
+            error: formatError(error)
         });
     }
 };
