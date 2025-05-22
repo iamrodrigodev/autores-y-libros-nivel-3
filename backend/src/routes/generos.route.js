@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const generosController = require('../controllers/generos.controller');
-const { authMiddleware } = require('../../auth/auth');
+// const { authMiddleware } = require('../../auth/auth');
 
 // Ruta para crear un nuevo género
 router.post('/crear_genero', generosController.crearGenero);
