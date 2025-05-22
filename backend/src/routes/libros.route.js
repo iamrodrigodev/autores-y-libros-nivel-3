@@ -4,7 +4,7 @@ const librosController = require('../controllers/libros.controller');
 //const { authMiddleware } = require('../../auth/auth');
 
 // Ruta para crear un nuevo libro
-router.post('/crear_libro', librosController.crearLibro);
+router.post('/', librosController.crearLibro);
 
 // Ruta para listar todos los libros
 router.get('/', librosController.obtenerLibros);
