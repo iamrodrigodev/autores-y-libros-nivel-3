@@ -16,15 +16,25 @@ const formatError = (error) => {
 };
 
 // Función para validar los datos del género
-const validarDatosGenero = (nombre, descripcion) => {
+const validarDatosGenero = (nombre, descripcion, esActualizacion = false) => {
     const errores = [];
 
-    if (!nombre || nombre.trim().length < 3) {
-        errores.push('El nombre es obligatorio y debe tener al menos 3 caracteres');
+    if (!esActualizacion || (esActualizacion && nombre !== undefined)) {
+        if (!nombre || nombre.trim() === '') {
+            errores.push('El nombre es obligatorio');
+        } else if (nombre.trim().length < 3) {
+            errores.push('El nombre debe tener al menos 3 caracteres');
+        }
     }
 
-    if (!descripcion || descripcion.trim().length < 10) {
-        errores.push('La descripción es obligatoria y debe tener al menos 10 caracteres');
+    if (!esActualizacion || (esActualizacion && descripcion !== undefined)) {
+        if (descripcion !== undefined) {
+            if (descripcion.trim() === '') {
+                errores.push('La descripción no puede estar vacía');
+            } else if (descripcion.trim().length < 10 || descripcion.trim().length > 500) {
+                errores.push('La descripción debe tener entre 10 y 500 caracteres');
+            }
+        }
     }
 
     return errores;
@@ -36,27 +46,45 @@ const crearGenero = async (req, res) => {
         const { nombre, descripcion } = req.body;
         
         // Validar datos
-        const errores = validarDatosGenero(nombre, descripcion);
-        if (errores.length > 0) {
+        const erroresValidacion = validarDatosGenero(nombre, descripcion);
+        if (erroresValidacion.length > 0) {
             return res.status(400).json({
                 success: false,
                 message: 'Error de validación',
-                errors: errores
+                errors: erroresValidacion
             });
         }
 
-        // Verificar si ya existe un género con el mismo nombre
-        const generoExistente = await Genero.findOne({ 
+        const erroresDuplicados = {};
+        
+        // Verificar si ya existe un género con el mismo nombre (insensible a mayúsculas/minúsculas)
+        const generoPorNombre = await Genero.findOne({ 
             nombre: { $regex: new RegExp(`^${nombre.trim()}$`, 'i') } 
         });
         
-        if (generoExistente) {
+        if (generoPorNombre) {
+            erroresDuplicados.nombre = 'Ya existe un género con este nombre';
+        }
+        
+        // Verificar si ya existe un género con la misma descripción
+        const generoPorDescripcion = await Genero.findOne({
+            descripcion: { $regex: new RegExp(`^${descripcion.trim()}$`, 'i') }
+        });
+        
+        if (generoPorDescripcion) {
+            erroresDuplicados.descripcion = 'Ya existe un género con esta descripción';
+        }
+        
+        // Si hay errores, devolverlos todos juntos
+        if (Object.keys(erroresDuplicados).length > 0) {
             return res.status(400).json({
                 success: false,
-                message: 'Ya existe un género con este nombre'
+                message: 'Error de validación',
+                errors: erroresDuplicados
             });
         }
 
+        // Crear el nuevo género
         const nuevoGenero = new Genero({
             nombre: nombre.trim(),
             descripcion: descripcion.trim()
@@ -170,56 +198,90 @@ const obtenerLibrosPorGenero = async (req, res) => {
 const actualizarGenero = async (req, res) => {
     try {
         const { id } = req.params;
-        
-        // Verificar longitud del ID
-        if (id.length !== 24) {
-            return res.status(400).json({
-                success: false,
-                error: `El ID proporcionado no es válido`
-            });
-        }
+        const { nombre, descripcion } = req.body;
 
-        // Verificar si el ID es un ObjectId de MongoDB válido
+        // Validar ID
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
                 success: false,
-                error: `El ID proporcionado no es válido`
+                message: 'ID de género no válido'
             });
         }
 
-        const { nombre, descripcion } = req.body;
-        
-        // Obtener el género actual primero
+        // Buscar el género por ID
         const genero = await Genero.findById(id);
         if (!genero) {
             return res.status(404).json({
                 success: false,
-                error: `No existe un género con ese ID`
+                message: 'Género no encontrado'
             });
         }
-
-        // Guardar el nombre antiguo para actualizar los libros
+        
+        // Validar datos (solo los campos que se están actualizando)
+        const erroresValidacion = validarDatosGenero(
+            nombre !== undefined ? nombre : genero.nombre, 
+            descripcion !== undefined ? descripcion : genero.descripcion,
+            true
+        );
+        
+        if (erroresValidacion.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Error de validación',
+                errors: erroresValidacion
+            });
+        }
+        
+        // Guardar el nombre anterior para actualizar los libros
         const nombreAnterior = genero.nombre;
         let librosActualizados = false;
 
-        // Si se está cambiando el nombre, verificar que no exista otro con el mismo nombre
-        if (nombre && nombre !== nombreAnterior) {
-            const generoExistente = await Genero.findOne({ 
-                nombre: { $regex: new RegExp(`^${nombre.trim()}$`, 'i') },
-                _id: { $ne: id }
+        const erroresDuplicados = {};
+        
+        // Verificar si ya existe otro género con el mismo nombre (insensible a mayúsculas/minúsculas)
+        if (nombre && nombre.toLowerCase() !== genero.nombre.toLowerCase()) {
+            const generoPorNombre = await Genero.findOne({
+                _id: { $ne: id },
+                nombre: { $regex: new RegExp(`^${nombre.trim()}$`, 'i') }
             });
             
-            if (generoExistente) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Ya existe un género con ese nombre'
-                });
+            if (generoPorNombre) {
+                erroresDuplicados.nombre = 'Ya existe un género con este nombre';
             }
+        }
+        
+        // Verificar si ya existe otro género con la misma descripción
+        if (descripcion && descripcion.toLowerCase() !== genero.descripcion.toLowerCase()) {
+            const generoPorDescripcion = await Genero.findOne({
+                _id: { $ne: id },
+                descripcion: { $regex: new RegExp(`^${descripcion.trim()}$`, 'i') }
+            });
+            
+            if (generoPorDescripcion) {
+                erroresDuplicados.descripcion = 'Ya existe un género con esta descripción';
+            }
+        }
+        
+        // Si hay errores, devolverlos todos juntos
+        if (errores.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Error de validación',
+                errors: errores
+            });
         }
 
         // Actualizar solo los campos proporcionados
-        if (nombre) genero.nombre = nombre.trim();
-        if (descripcion !== undefined) genero.descripcion = descripcion.trim();
+        const actualizacion = {};
+        if (nombre) {
+            actualizacion.nombre = nombre.trim();
+        }
+        if (descripcion !== undefined) {
+            actualizacion.descripcion = descripcion.trim();
+        }
+        
+        // Aplicar actualización
+        Object.assign(genero, actualizacion);
 
         // Guardar el género actualizado
         const generoActualizado = await genero.save();
