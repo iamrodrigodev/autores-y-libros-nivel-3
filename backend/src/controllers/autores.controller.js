@@ -152,32 +152,78 @@ exports.actualizarAutor = async (req, res) => {
             });
         }
 
-        const { nombre, descripcion } = req.body;
-
-        const autorActualizado = await Autor.findByIdAndUpdate(
-            req.params.id,
-            { nombre, descripcion },
-            { new: true, runValidators: true }
-        );
-
-        if (!autorActualizado) {
+        const { nombre, fecha_nacimiento, nacionalidad } = req.body;
+        
+        // Obtener el autor actual primero
+        const autor = await Autor.findById(req.params.id);
+        if (!autor) {
             return res.status(404).json({
                 success: false,
-                message: 'Autor no encontrado'
+                error: 'No existe un autor con ese ID'
             });
         }
 
-        await mongoose.connection.collection('Libros').updateMany(
-            { autores: autorActualizado.nombre },
-            { $set: { 'autores.$': autorActualizado.nombre } }
-        );
+        // Guardar el nombre antiguo para actualizar los libros
+        const nombreAnterior = autor.nombre;
+        let librosActualizados = false;
+
+        // Si se está cambiando el nombre, verificar que no exista otro con el mismo nombre
+        if (nombre && nombre !== nombreAnterior) {
+            const autorExistente = await Autor.findOne({ nombre });
+            if (autorExistente) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Ya existe un autor con ese nombre'
+                });
+            }
+        }
+
+        // Actualizar solo los campos proporcionados
+        if (nombre) autor.nombre = nombre;
+        if (fecha_nacimiento) autor.fecha_nacimiento = fecha_nacimiento;
+        if (nacionalidad) autor.nacionalidad = nacionalidad;
+
+        // Guardar el autor actualizado
+        const autorActualizado = await autor.save();
+
+        if (!autorActualizado) {
+            return res.status(500).json({
+                success: false,
+                error: 'No se pudo actualizar el autor'
+            });
+        }
+
+        // Si se cambió el nombre del autor, actualizar los libros relacionados
+        if (nombre && nombre !== nombreAnterior) {
+            // Obtener todos los libros que tienen el nombre antiguo del autor
+            const libros = await mongoose.connection.collection('Libros')
+                .find({ autores: nombreAnterior })
+                .toArray();
+
+            // Actualizar cada libro individualmente
+            for (const libro of libros) {
+                const nuevosAutores = libro.autores.map(autor => 
+                    autor === nombreAnterior ? nombre : autor
+                );
+                
+                await mongoose.connection.collection('Libros').updateOne(
+                    { _id: libro._id },
+                    { $set: { autores: nuevosAutores } }
+                );
+            }
+            
+            librosActualizados = libros.length > 0;
+        }
 
         res.status(200).json({
             success: true,
-            message: 'Nombre y descripción del autor actualizados exitosamente y libros relacionados actualizados',
+            message: librosActualizados 
+                ? 'Autor actualizado exitosamente y libros relacionados actualizados'
+                : 'Autor actualizado exitosamente',
             data: autorActualizado
         });
     } catch (error) {
+        console.error('Error al actualizar autor:', error);
         res.status(500).json({
             success: false,
             error: formatError(error)
