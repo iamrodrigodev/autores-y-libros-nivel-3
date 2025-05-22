@@ -325,34 +325,72 @@ exports.crearLibro = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error interno del servidor',
-            errors: [formatError(error)]
+            error: formatError(error)
         });
     }
 };
 
-// Obtener todos los libros
+// Obtener todos los libros disponibles
 exports.obtenerLibros = async (_req, res) => {
     try {
-        const libros = await Libro.find().sort({ titulo: 1 });
+        const libros = await Libro.find({ disponibilidad: true })
+            .sort({ titulo: 1 })
+            .populate('autores', 'nombre apellido')
+            .populate('generos', 'nombre');
         
         if (libros.length === 0) {
             return res.status(200).json({
                 success: true,
-                message: 'No hay libros registrados',
+                message: 'No hay libros disponibles actualmente',
+                count: 0,
                 data: []
             });
         }
         
         res.status(200).json({
             success: true,
-            message: 'Libros encontrados',
+            message: 'Libros disponibles encontrados',
             count: libros.length,
             data: libros
         });
     } catch (error) {
-        console.error('Error al obtener libros:', error);
+        console.error('Error al obtener libros disponibles:', error);
         res.status(500).json({
             success: false,
+            message: 'Error al obtener los libros',
+            error: formatError(error)
+        });
+    }
+};
+
+// Obtener libros no disponibles
+exports.obtenerLibrosNoDisponibles = async (_req, res) => {
+    try {
+        const libros = await Libro.find({ disponibilidad: false })
+            .sort({ titulo: 1 })
+            .populate('autores', 'nombre apellido')
+            .populate('generos', 'nombre');
+        
+        if (libros.length === 0) {
+            return res.status(200).json({
+                success: true,
+                message: 'No hay libros no disponibles actualmente',
+                count: 0,
+                data: []
+            });
+        }
+        
+        res.status(200).json({
+            success: true,
+            message: 'Libros no disponibles encontrados',
+            count: libros.length,
+            data: libros
+        });
+    } catch (error) {
+        console.error('Error al obtener libros no disponibles:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al obtener los libros no disponibles',
             error: formatError(error)
         });
     }
@@ -361,12 +399,21 @@ exports.obtenerLibros = async (_req, res) => {
 // Obtener un libro por ID
 exports.obtenerLibroPorId = async (req, res) => {
     try {
-        const libro = await Libro.findById(req.params.id);
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de libro no válido'
+            });
+        }
+
+        const libro = await Libro.findById(req.params.id)
+            .populate('autores', 'nombre apellido')
+            .populate('generos', 'nombre');
         
         if (!libro) {
             return res.status(404).json({
                 success: false,
-                error: 'Libro no encontrado con el ID proporcionado'
+                message: 'Libro no encontrado con el ID proporcionado'
             });
         }
         
