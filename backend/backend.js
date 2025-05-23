@@ -12,8 +12,16 @@ const database_mongo = require('./src/config/database');
 
 const app = express();
 
+// Configuración de CORS
+const corsOptions = {
+  origin: 'http://localhost:3000', // URL del frontend
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+
 // Middlewares
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Rutas
@@ -30,7 +38,7 @@ database_mongo.then(() => {
   console.log(`Host: ${host}`);
   console.log(`Puerto: ${port}`);
   
-  const PORT = process.env.PORT || 3000;
+  const PORT = process.env.PORT || 3001;
   
   app.listen(PORT, () => {
     console.log(`Servidor backend escuchando en http://localhost:${PORT}`);
