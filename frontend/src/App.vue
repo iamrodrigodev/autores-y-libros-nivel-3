@@ -1,0 +1,14 @@
+<template>
+  <h1>Hola Mundo</h1>
+</template>
+
+<style>
+body {
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+}
+</style>
