@@ -357,11 +357,11 @@ const ListaLibros = () => {
                 </div>
               </div>
               
-              {libro.generos && libro.generos.length > 0 && (
-                <div className="libro-generos">
-                  <h4>Géneros</h4>
-                  <div className="generos-lista">
-                    {libro.generos.map((genero, idx) => (
+              <div className="libro-generos">
+                <h4>Géneros</h4>
+                <div className="generos-lista">
+                  {libro.generos && libro.generos.length > 0 ? (
+                    libro.generos.map((genero, idx) => (
                       <span 
                         key={`genero-${idx}`} 
                         className="genero"
@@ -372,10 +372,12 @@ const ListaLibros = () => {
                       >
                         {genero}
                       </span>
-                    ))}
-                  </div>
+                    ))
+                  ) : (
+                    <span className="sin-genero">Sin géneros</span>
+                  )}
                 </div>
-              )}
+              </div>
               
               <div className="libro-sinopsis">
                 <h4>Sinopsis</h4>

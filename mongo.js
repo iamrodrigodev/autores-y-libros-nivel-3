@@ -1,5 +1,3 @@
-//use AutoresLibros;
-
 // Creacion de Colecciones (tablas):
 db.createCollection("Generos");
 db.createCollection("Autores");
