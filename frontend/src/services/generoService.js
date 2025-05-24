@@ -117,7 +117,11 @@ export const generoService = {
   async obtenerLibrosPorGenero(id) {
     try {
       const response = await api.get(`/${id}/libros`);
-      return { data: response.data, error: null };
+      // La respuesta exitosa viene con los datos en response.data.data
+      return { 
+        data: response.data,
+        error: null 
+      };
     } catch (error) {
       console.error('Error al obtener los libros del género:', error);
       return { 

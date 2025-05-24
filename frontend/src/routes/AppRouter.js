@@ -5,6 +5,7 @@ import Footer from '../components/layout/Footer';
 import Libros from '../pages/Libros';
 import Autores from '../pages/Autores';
 import Generos from '../pages/Generos';
+import LibrosPorGenero from '../components/generos/LibrosPorGenero';
 
 const AppRouter = () => {
   return (
@@ -16,6 +17,7 @@ const AppRouter = () => {
           <Route path="/libros" element={<Libros />} />
           <Route path="/autores" element={<Autores />} />
           <Route path="/generos" element={<Generos />} />
+          <Route path="/generos/libros/:id" element={<LibrosPorGenero />} />
         </Routes>
       </main>
       <Footer />
