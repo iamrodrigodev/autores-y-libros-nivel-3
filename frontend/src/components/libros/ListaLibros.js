@@ -135,8 +135,8 @@ const ListaLibros = () => {
         paginas: libro.paginas || '',
         sinopsis: libro.sinopsis || '',
         disponibilidad: libro.disponibilidad !== undefined ? libro.disponibilidad : true,
-        generos: libro.generos ? libro.generos.map(g => g._id || g) : [],
-        autores: libro.autores ? libro.autores.map(a => a._id || a) : []
+        generos: libro.generos ? [...libro.generos] : [],
+        autores: libro.autores ? [...libro.autores] : []
       });
       setMostrarFormulario(true);
     } catch (error) {
@@ -152,12 +152,18 @@ const ListaLibros = () => {
 
   // Función para agregar un nuevo género
   const agregarGenero = () => {
-    if (nuevoGenero && !formulario.generos.includes(nuevoGenero)) {
-      setFormulario(prev => ({
-        ...prev,
-        generos: [...prev.generos, nuevoGenero]
-      }));
-      setNuevoGenero('');
+    if (nuevoGenero) {
+      // Obtener el nombre del género seleccionado
+      const generoSeleccionado = generos.find(g => (g._id === nuevoGenero || g.id === nuevoGenero));
+      const nombreGenero = generoSeleccionado ? (generoSeleccionado.nombre || generoSeleccionado.name) : nuevoGenero;
+      
+      if (nombreGenero && !formulario.generos.includes(nombreGenero)) {
+        setFormulario(prev => ({
+          ...prev,
+          generos: [...prev.generos, nombreGenero]
+        }));
+        setNuevoGenero('');
+      }
     }
   };
 
@@ -171,12 +177,20 @@ const ListaLibros = () => {
 
   // Función para agregar un nuevo autor
   const agregarAutor = () => {
-    if (nuevoAutor && !formulario.autores.includes(nuevoAutor)) {
-      setFormulario(prev => ({
-        ...prev,
-        autores: [...prev.autores, nuevoAutor]
-      }));
-      setNuevoAutor('');
+    if (nuevoAutor) {
+      // Obtener el nombre del autor seleccionado
+      const autorSeleccionado = autores.find(a => (a._id === nuevoAutor || a.id === nuevoAutor));
+      const nombreAutor = autorSeleccionado ? 
+        (autorSeleccionado.nombre || autorSeleccionado.name || 'Sin nombre') : 
+        nuevoAutor;
+      
+      if (nombreAutor && !formulario.autores.includes(nombreAutor)) {
+        setFormulario(prev => ({
+          ...prev,
+          autores: [...prev.autores, nombreAutor]
+        }));
+        setNuevoAutor('');
+      }
     }
   };
 
@@ -429,18 +443,25 @@ const ListaLibros = () => {
                 <h4>Géneros</h4>
                 <div className="generos-lista">
                   {libro.generos && libro.generos.length > 0 ? (
-                    libro.generos.map((genero, idx) => (
-                      <span 
-                        key={`genero-${idx}`} 
-                        className="genero"
-                        style={{
-                          '--genre-color': getGenreColor(genero),
-                          '--genre-color-light': `${getGenreColor(genero)}33`
-                        }}
-                      >
-                        {genero}
-                      </span>
-                    ))
+                    libro.generos.map((genero, idx) => {
+                      // Si el género es un objeto, extraer el nombre, de lo contrario usar el valor directo
+                      const nombreGenero = genero && typeof genero === 'object' ? 
+                        (genero.nombre || genero.name || 'Sin nombre') : 
+                        genero;
+                        
+                      return (
+                        <span 
+                          key={`genero-${idx}`} 
+                          className="genero"
+                          style={{
+                            '--genre-color': getGenreColor(nombreGenero),
+                            '--genre-color-light': `${getGenreColor(nombreGenero)}33`
+                          }}
+                        >
+                          {nombreGenero}
+                        </span>
+                      );
+                    })
                   ) : (
                     <span className="sin-genero">Sin géneros</span>
                   )}
@@ -548,11 +569,15 @@ const ListaLibros = () => {
                   >
                     <option value="">Selecciona un género</option>
                     {Array.isArray(generos) && generos.length > 0 ? (
-                      generos.map((genero) => (
-                        <option key={genero._id || genero.id} value={genero._id || genero.id}>
-                          {genero.nombre || genero.name || 'Sin nombre'}
-                        </option>
-                      ))
+                      generos.map((genero) => {
+                        const generoId = genero._id || genero.id;
+                        const generoNombre = genero.nombre || genero.name || 'Sin nombre';
+                        return (
+                          <option key={generoId} value={generoId}>
+                            {generoNombre}
+                          </option>
+                        );
+                      })
                     ) : (
                       <option disabled>No hay géneros disponibles</option>
                     )}
@@ -570,23 +595,18 @@ const ListaLibros = () => {
                   <div className="mensaje-error">{erroresValidacion.generos}</div>
                 )}
                 <div className="lista-etiquetas">
-                  {formulario.generos.map((generoId, index) => {
-                    // Buscar el género por ID para mostrar su nombre
-                    const genero = Array.isArray(generos) ? generos.find(g => (g._id === generoId || g.id === generoId)) : null;
-                    const nombreGenero = genero ? (genero.nombre || genero.name || 'Sin nombre') : 'Género no encontrado';
-                    return (
+                  {formulario.generos.map((generoNombre, index) => (
                     <span key={index} className="etiqueta">
-                      {nombreGenero}
+                      {generoNombre}
                       <button
                         type="button"
-                        onClick={() => eliminarGenero(generoId)}
+                        onClick={() => eliminarGenero(generoNombre)}
                         className="btn-eliminar-etiqueta"
                       >
                         &times;
                       </button>
                     </span>
-                  );
-                  })}
+                  ))}
                 </div>
               </div>
 
@@ -600,11 +620,15 @@ const ListaLibros = () => {
                   >
                     <option value="">Selecciona un autor</option>
                     {Array.isArray(autores) && autores.length > 0 ? (
-                      autores.map((autor) => (
-                        <option key={autor._id || autor.id} value={autor._id || autor.id}>
-                          {autor.nombre || autor.name || 'Sin nombre'}
-                        </option>
-                      ))
+                      autores.map((autor) => {
+                        const autorId = autor._id || autor.id;
+                        const autorNombre = autor.nombre || autor.name || 'Sin nombre';
+                        return (
+                          <option key={autorId} value={autorId}>
+                            {autorNombre}
+                          </option>
+                        );
+                      })
                     ) : (
                       <option disabled>No hay autores disponibles</option>
                     )}
@@ -622,23 +646,18 @@ const ListaLibros = () => {
                   <div className="mensaje-error">{erroresValidacion.autores}</div>
                 )}
                 <div className="lista-etiquetas">
-                  {formulario.autores.map((autorId, index) => {
-                    // Buscar el autor por ID para mostrar su nombre
-                    const autor = Array.isArray(autores) ? autores.find(a => (a._id === autorId || a.id === autorId)) : null;
-                    const nombreAutor = autor ? (autor.nombre || autor.name || 'Sin nombre') : 'Autor no encontrado';
-                    return (
+                  {formulario.autores.map((nombreAutor, index) => (
                     <span key={index} className="etiqueta">
                       {nombreAutor}
                       <button
                         type="button"
-                        onClick={() => eliminarAutor(autorId)}
+                        onClick={() => eliminarAutor(nombreAutor)}
                         className="btn-eliminar-etiqueta"
                       >
                         &times;
                       </button>
                     </span>
-                  );
-                  })}
+                  ))}
                 </div>
               </div>
 
