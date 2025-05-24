@@ -1,0 +1,126 @@
+/* Estilos base de la aplicación */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.6;
+  color: var(--text-primary, #2c3e50);
+  background-color: var(--background-default, #f5f6fa);
+}
+
+/* Establecer variables CSS basadas en el archivo colors.js */
+:root {
+  /* Colores primarios */
+  --primary-main: #2c3e50;
+  --primary-light: #34495e;
+  --primary-dark: #1a252f;
+  --primary-contrast-text: #ffffff;
+  
+  /* Colores secundarios */
+  --secondary-main: #3498db;
+  --secondary-light: #5dade2;
+  --secondary-dark: #2980b9;
+  --secondary-contrast-text: #ffffff;
+  
+  /* Colores de estado */
+  --success-main: #2ecc71;
+  --success-light: #58d68d;
+  --success-dark: #27ae60;
+  
+  --warning-main: #f39c12;
+  --warning-light: #f5b041;
+  --warning-dark: #d68910;
+  
+  --error-main: #e74c3c;
+  --error-light: #ec7063;
+  --error-dark: #c0392b;
+  
+  /* Escala de grises */
+  --gray-100: #f8f9fa;
+  --gray-200: #e9ecef;
+  --gray-300: #dee2e6;
+  --gray-400: #ced4da;
+  --gray-500: #adb5bd;
+  --gray-600: #6c757d;
+  --gray-700: #495057;
+  --gray-800: #343a40;
+  --gray-900: #212529;
+  
+  /* Fondo y texto */
+  --background-default: #f5f6fa;
+  --background-paper: #ffffff;
+  
+  --text-primary: #2c3e50;
+  --text-secondary: #6c757d;
+  --text-disabled: #adb5bd;
+  --text-hint: #6c757d;
+  
+  /* Bordes */
+  --border: #dee2e6;
+  
+  /* Sombra */
+  --shadow: rgba(0, 0, 0, 0.1);
+}
+
+/* Estructura principal de la aplicación */
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Contenido principal */
+.main-content {
+  flex: 1;
+  padding: 6rem 2rem 2rem; /* Ajuste para el navbar fijo */
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Estilos básicos para encabezados */
+h1, h2, h3, h4, h5, h6 {
+  margin-bottom: 1rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: 2.5rem;
+}
+
+/* Estilos para enlaces */
+a {
+  color: var(--secondary-main);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: var(--secondary-dark);
+  text-decoration: underline;
+}
+
+/* Utilidades */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Media queries para responsividad */
+@media (max-width: 768px) {
+  .main-content {
+    padding: 5rem 1rem 1rem;
+  }
+  
+  h1 {
+    font-size: 2rem;
+  }
+}
