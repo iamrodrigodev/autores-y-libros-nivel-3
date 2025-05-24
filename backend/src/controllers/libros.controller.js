@@ -40,8 +40,24 @@ const crearLibro = async (req, res) => {
         if (paginas === undefined || paginas === null || paginas === '') {
             errores.paginas = 'El número de páginas es obligatorio';
         }
-        if (!generos || generos.length === 0) errores.generos = 'Debe proporcionar al menos un género';
-        if (!autores || autores.length === 0) errores.autores = 'Debe proporcionar al menos un autor';
+        // Los campos generos y autores son opcionales, pero si se proporcionan deben ser arrays
+        if (generos !== undefined && generos !== null) {
+            if (!Array.isArray(generos)) {
+                errores.generos = 'El formato de géneros no es válido';
+            } else if (generos.length === 0) {
+                // Si se envía un array vacío, lo convertimos a undefined
+                generos = undefined;
+            }
+        }
+        
+        if (autores !== undefined && autores !== null) {
+            if (!Array.isArray(autores)) {
+                errores.autores = 'El formato de autores no es válido';
+            } else if (autores.length === 0) {
+                // Si se envía un array vacío, lo convertimos a undefined
+                autores = undefined;
+            }
+        }
 
         // 2. Validar formatos y valores solo si los campos requeridos están presentes
         if (fecha_publicacion) {
@@ -61,142 +77,116 @@ const crearLibro = async (req, res) => {
             }
         }
 
-        // Validar géneros si están presentes
+        // Validar géneros solo si se proporcionan
         if (generos && generos.length > 0) {
-            errores.generos = [];
-            
             if (!Array.isArray(generos)) {
-                errores.generos.push('Los géneros deben ser un array');
-            } else {
+                errores.generos = 'El formato de géneros no es válido';
+            } else if (generos.length > 0) {
                 // Verificar si hay géneros vacíos
                 const generosVacios = generos.some(g => !g || g.trim() === '');
                 if (generosVacios) {
-                    errores.generos.push('Los géneros no pueden estar vacíos');
-                }
-                
-                // Convertir a minúsculas para comparación insensible a mayúsculas
-                const generosLower = generos.map(g => g.trim().toLowerCase());
-                const generosUnicos = [...new Set(generosLower)];
-                
-                // Verificar duplicados (insensible a mayúsculas/minúsculas)
-                if (generosUnicos.length !== generos.length) {
-                    // Encontrar los duplicados (insensible a mayúsculas/minúsculas) pero mantener el formato original
-                    const duplicados = [];
-                    const vistos = new Set();
+                    errores.generos = 'Los géneros no pueden estar vacíos';
+                } else {
+                    // Validar duplicados y existencia en la base de datos
+                    const generosLower = generos.map(g => g.trim().toLowerCase());
+                    const generosUnicos = [...new Set(generosLower)];
                     
-                    for (const genero of generos) {
-                        const generoLower = genero.trim().toLowerCase();
-                        if (vistos.has(generoLower)) {
-                            // Si ya vimos este género (en minúsculas) pero con diferente formato
-                            const yaAgregado = duplicados.some(d => d.toLowerCase() === generoLower);
-                            if (!yaAgregado) {
-                                duplicados.push(genero);
+                    if (generosUnicos.length !== generos.length) {
+                        const duplicados = [];
+                        const vistos = new Set();
+                        
+                        for (const genero of generos) {
+                            const generoLower = genero.trim().toLowerCase();
+                            if (vistos.has(generoLower)) {
+                                const yaAgregado = duplicados.some(d => d.toLowerCase() === generoLower);
+                                if (!yaAgregado) {
+                                    duplicados.push(genero);
+                                }
+                            } else {
+                                vistos.add(generoLower);
                             }
-                        } else {
-                            vistos.add(generoLower);
+                        }
+                        
+                        errores.generos = `Géneros duplicados: ${duplicados.join(', ')}`;
+                    } else {
+                        // Verificar existencia de géneros en la base de datos
+                        const generosExistentes = await mongoose.connection.collection('Generos').find({
+                            nombre: { $in: generos.map(g => g.trim()) }
+                        }).toArray();
+                        
+                        const generosInvalidos = [];
+                        const vistos = new Set();
+                        
+                        for (const genero of generos) {
+                            const generoLower = genero.trim().toLowerCase();
+                            if (!vistos.has(generoLower) && 
+                                !generosExistentes.some(ge => ge.nombre.toLowerCase() === generoLower)) {
+                                generosInvalidos.push(genero);
+                                vistos.add(generoLower);
+                            }
+                        }
+                        
+                        if (generosInvalidos.length > 0) {
+                            errores.generos = `Géneros no encontrados: ${generosInvalidos.join(', ')}`;
                         }
                     }
-                    
-                    errores.generos.push(`Géneros duplicados: ${duplicados.join(', ')}`);
-                }
-                
-                // Verificar existencia de géneros en la base de datos
-                if (generos.length > 0 && !generosVacios) {
-                    const generosExistentes = await mongoose.connection.collection('Generos').find({
-                        nombre: { $in: generos.map(g => g.trim()) }
-                    }).toArray();
-                    
-                    // Mantener el formato original de los géneros no encontrados
-                    const generosInvalidos = [];
-                    const vistos = new Set();
-                    
-                    for (const genero of generos) {
-                        const generoLower = genero.trim().toLowerCase();
-                        if (!vistos.has(generoLower) && 
-                            !generosExistentes.some(ge => ge.nombre.toLowerCase() === generoLower)) {
-                            generosInvalidos.push(genero);
-                            vistos.add(generoLower);
-                        }
-                    }
-                    
-                    if (generosInvalidos.length > 0) {
-                        errores.generos.push(`Géneros no encontrados: ${generosInvalidos.join(', ')}`);
-                    }
-                }
-                
-                // Si no hay errores, eliminar el array
-                if (errores.generos.length === 0) {
-                    delete errores.generos;
                 }
             }
         }
 
-        // Validar autores
+        // Validar autores solo si se proporcionan
         if (autores && autores.length > 0) {
-            errores.autores = [];
-            
             if (!Array.isArray(autores)) {
-                errores.autores.push('Los autores deben ser un array');
-            } else {
+                errores.autores = 'El formato de autores no es válido';
+            } else if (autores.length > 0) {
                 // Verificar si hay autores vacíos
                 const autoresVacios = autores.some(a => !a || a.trim() === '');
                 if (autoresVacios) {
-                    errores.autores.push('Los nombres de autores no pueden estar vacíos');
-                }
-                
-                // Convertir a minúsculas para comparación insensible a mayúsculas
-                const autoresLower = autores.map(a => a.trim().toLowerCase());
-                const autoresUnicos = [...new Set(autoresLower)];
-                
-                // Verificar duplicados (insensible a mayúsculas/minúsculas)
-                if (autoresUnicos.length !== autores.length) {
-                    // Encontrar los duplicados (insensible a mayúsculas/minúsculas) pero mantener el formato original
-                    const duplicados = [];
-                    const vistos = new Set();
+                    errores.autores = 'Los nombres de autores no pueden estar vacíos';
+                } else {
+                    // Validar duplicados y existencia en la base de datos
+                    const autoresLower = autores.map(a => a.trim().toLowerCase());
+                    const autoresUnicos = [...new Set(autoresLower)];
                     
-                    for (const autor of autores) {
-                        const autorLower = autor.trim().toLowerCase();
-                        if (vistos.has(autorLower)) {
-                            // Si ya vimos este autor (en minúsculas) pero con diferente formato
-                            const yaAgregado = duplicados.some(d => d.toLowerCase() === autorLower);
-                            if (!yaAgregado) {
-                                duplicados.push(autor);
+                    if (autoresUnicos.length !== autores.length) {
+                        const duplicados = [];
+                        const vistos = new Set();
+                        
+                        for (const autor of autores) {
+                            const autorLower = autor.trim().toLowerCase();
+                            if (vistos.has(autorLower)) {
+                                const yaAgregado = duplicados.some(d => d.toLowerCase() === autorLower);
+                                if (!yaAgregado) {
+                                    duplicados.push(autor);
+                                }
+                            } else {
+                                vistos.add(autorLower);
                             }
-                        } else {
-                            vistos.add(autorLower);
+                        }
+                        
+                        errores.autores = `Autores duplicados: ${duplicados.join(', ')}`;
+                    } else {
+                        // Verificar existencia de autores en la base de datos
+                        const autoresExistentes = await mongoose.connection.collection('Autores').find({
+                            nombre: { $in: autores.map(a => a.trim()) }
+                        }).toArray();
+                        
+                        const autoresInvalidos = [];
+                        const vistos = new Set();
+                        
+                        for (const autor of autores) {
+                            const autorLower = autor.trim().toLowerCase();
+                            if (!vistos.has(autorLower) && 
+                                !autoresExistentes.some(ae => ae.nombre.toLowerCase() === autorLower)) {
+                                autoresInvalidos.push(autor);
+                                vistos.add(autorLower);
+                            }
+                        }
+                        
+                        if (autoresInvalidos.length > 0) {
+                            errores.autores = `Autores no encontrados: ${autoresInvalidos.join(', ')}`;
                         }
                     }
-                    
-                    errores.autores.push(`Autores duplicados: ${duplicados.join(', ')}`);
-                }
-                
-                // Verificar existencia de autores en la base de datos
-                if (autores.length > 0 && !autoresVacios) {
-                    const autoresExistentes = await mongoose.connection.collection('Autores').find({
-                        nombre: { $in: autores.map(a => a.trim()) }
-                    }).toArray();
-                    
-                    // Mantener el formato original de los autores no encontrados
-                    const autoresInvalidos = [];
-                    const vistos = new Set();
-                    
-                    for (const autor of autores) {
-                        const autorLower = autor.trim().toLowerCase();
-                        if (!vistos.has(autorLower) && 
-                            !autoresExistentes.some(ae => ae.nombre.toLowerCase() === autorLower)) {
-                            autoresInvalidos.push(autor);
-                            vistos.add(autorLower);
-                        }
-                    }
-                    
-                    if (autoresInvalidos.length > 0) {
-                        errores.autores.push(`Autores no encontrados: ${autoresInvalidos.join(', ')}`);
-                    }
-                }
-                
-                // Si no hay errores, eliminar el array
-                if (errores.autores.length === 0) {
-                    delete errores.autores;
                 }
             }
         }
@@ -433,7 +423,7 @@ const obtenerLibroPorId = async (req, res) => {
 const actualizarLibro = async (req, res) => {
     try {
         const { id } = req.params;
-        const { 
+        let { 
             titulo, 
             fecha_publicacion, 
             sinopsis, 
@@ -441,7 +431,11 @@ const actualizarLibro = async (req, res) => {
             generos, 
             autores,
             disponibilidad
-        } = req.body;
+        } = req.body; 
+        
+        // Crear copias modificables de los arrays
+        let generosArray = generos;
+        let autoresArray = autores;
 
         const errores = {};
         const now = new Date();
@@ -468,6 +462,126 @@ const actualizarLibro = async (req, res) => {
                 
                 if (libroExistente) {
                     errores.titulo = 'Ya existe un libro con este título';
+                }
+            }
+        }
+
+        // Validar géneros si se están actualizando
+        if (generosArray !== undefined) {
+            if (generosArray === null || generosArray.length === 0) {
+                // Si se envía null o array vacío, lo convertimos a array vacío
+                generosArray = [];
+            } else if (!Array.isArray(generosArray)) {
+                errores.generos = 'El formato de géneros no es válido';
+            } else if (generosArray.length > 0) {
+                // Verificar si hay géneros vacíos
+                const generosVacios = generosArray.some(g => !g || g.trim() === '');
+                if (generosVacios) {
+                    errores.generos = 'Los géneros no pueden estar vacíos';
+                } else {
+                    // Validar duplicados y existencia en la base de datos
+                    const generosLower = generosArray.map(g => g.trim().toLowerCase());
+                    const generosUnicos = [...new Set(generosLower)];
+                    
+                    if (generosUnicos.length !== generosArray.length) {
+                        const duplicados = [];
+                        const vistos = new Set();
+                        
+                        for (const genero of generosArray) {
+                            const generoLower = genero.trim().toLowerCase();
+                            if (vistos.has(generoLower)) {
+                                const yaAgregado = duplicados.some(d => d.toLowerCase() === generoLower);
+                                if (!yaAgregado) {
+                                    duplicados.push(genero);
+                                }
+                            } else {
+                                vistos.add(generoLower);
+                            }
+                        }
+                        
+                        errores.generos = `Géneros duplicados: ${duplicados.join(', ')}`;
+                    } else {
+                        // Verificar existencia de géneros en la base de datos
+                        const generosExistentes = await mongoose.connection.collection('Generos').find({
+                            nombre: { $in: generosArray.map(g => g.trim()) }
+                        }).toArray();
+                        
+                        const generosInvalidos = [];
+                        const vistos = new Set();
+                        
+                        for (const genero of generosArray) {
+                            const generoLower = genero.trim().toLowerCase();
+                            if (!vistos.has(generoLower) && 
+                                !generosExistentes.some(ge => ge.nombre.toLowerCase() === generoLower)) {
+                                generosInvalidos.push(genero);
+                                vistos.add(generoLower);
+                            }
+                        }
+                        
+                        if (generosInvalidos.length > 0) {
+                            errores.generos = `Géneros no encontrados: ${generosInvalidos.join(', ')}`;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Validar autores si se están actualizando
+        if (autoresArray !== undefined) {
+            if (autoresArray === null || autoresArray.length === 0) {
+                // Si se envía null o array vacío, lo convertimos a array vacío
+                autoresArray = [];
+            } else if (!Array.isArray(autoresArray)) {
+                errores.autores = 'El formato de autores no es válido';
+            } else if (autoresArray.length > 0) {
+                // Verificar si hay autores vacíos
+                const autoresVacios = autoresArray.some(a => !a || a.trim() === '');
+                if (autoresVacios) {
+                    errores.autores = 'Los nombres de autores no pueden estar vacíos';
+                } else {
+                    // Validar duplicados y existencia en la base de datos
+                    const autoresLower = autoresArray.map(a => a.trim().toLowerCase());
+                    const autoresUnicos = [...new Set(autoresLower)];
+                    
+                    if (autoresUnicos.length !== autoresArray.length) {
+                        const duplicados = [];
+                        const vistos = new Set();
+                        
+                        for (const autor of autoresArray) {
+                            const autorLower = autor.trim().toLowerCase();
+                            if (vistos.has(autorLower)) {
+                                const yaAgregado = duplicados.some(d => d.toLowerCase() === autorLower);
+                                if (!yaAgregado) {
+                                    duplicados.push(autor);
+                                }
+                            } else {
+                                vistos.add(autorLower);
+                            }
+                        }
+                        
+                        errores.autores = `Autores duplicados: ${duplicados.join(', ')}`;
+                    } else {
+                        // Verificar existencia de autores en la base de datos
+                        const autoresExistentes = await mongoose.connection.collection('Autores').find({
+                            nombre: { $in: autoresArray.map(a => a.trim()) }
+                        }).toArray();
+                        
+                        const autoresInvalidos = [];
+                        const vistos = new Set();
+                        
+                        for (const autor of autoresArray) {
+                            const autorLower = autor.trim().toLowerCase();
+                            if (!vistos.has(autorLower) && 
+                                !autoresExistentes.some(ae => ae.nombre.toLowerCase() === autorLower)) {
+                                autoresInvalidos.push(autor);
+                                vistos.add(autorLower);
+                            }
+                        }
+                        
+                        if (autoresInvalidos.length > 0) {
+                            errores.autores = `Autores no encontrados: ${autoresInvalidos.join(', ')}`;
+                        }
+                    }
                 }
             }
         }
@@ -504,147 +618,6 @@ const actualizarLibro = async (req, res) => {
             }
         }
 
-
-        // Validar géneros si se están actualizando
-        if (generos !== undefined) {
-            errores.generos = [];
-            
-            if (!Array.isArray(generos) || generos.length === 0) {
-                errores.generos.push('Debe proporcionar al menos un género');
-            } else {
-                // Verificar si hay géneros vacíos
-                const generosVacios = generos.some(g => !g || g.trim() === '');
-                if (generosVacios) {
-                    errores.generos.push('Los géneros no pueden estar vacíos');
-                }
-                
-                // Convertir a minúsculas para comparación insensible a mayúsculas
-                const generosLower = generos.map(g => g.trim().toLowerCase());
-                const generosUnicos = [...new Set(generosLower)];
-                
-                // Verificar duplicados (insensible a mayúsculas/minúsculas)
-                if (generosUnicos.length !== generos.length) {
-                    // Encontrar los duplicados (insensible a mayúsculas/minúsculas) pero mantener el formato original
-                    const duplicados = [];
-                    const vistos = new Set();
-                    
-                    for (const genero of generos) {
-                        const generoLower = genero.trim().toLowerCase();
-                        if (vistos.has(generoLower)) {
-                            // Si ya vimos este género (en minúsculas) pero con diferente formato
-                            const yaAgregado = duplicados.some(d => d.toLowerCase() === generoLower);
-                            if (!yaAgregado) {
-                                duplicados.push(genero);
-                            }
-                        } else {
-                            vistos.add(generoLower);
-                        }
-                    }
-                    
-                    errores.generos.push(`Géneros duplicados: ${duplicados.join(', ')}`);
-                }
-                
-                // Verificar existencia de géneros en la base de datos
-                if (generos.length > 0 && !generosVacios) {
-                    const generosExistentes = await mongoose.connection.collection('Generos').find({
-                        nombre: { $in: generos.map(g => g.trim()) }
-                    }).toArray();
-                    
-                    // Mantener el formato original de los géneros no encontrados
-                    const generosInvalidos = [];
-                    const vistos = new Set();
-                    
-                    for (const genero of generos) {
-                        const generoLower = genero.trim().toLowerCase();
-                        if (!vistos.has(generoLower) && 
-                            !generosExistentes.some(ge => ge.nombre.toLowerCase() === generoLower)) {
-                            generosInvalidos.push(genero);
-                            vistos.add(generoLower);
-                        }
-                    }
-                    
-                    if (generosInvalidos.length > 0) {
-                        errores.generos.push(`Géneros no encontrados: ${generosInvalidos.join(', ')}`);
-                    }
-                }
-                
-                // Si no hay errores, eliminar el array
-                if (errores.generos.length === 0) {
-                    delete errores.generos;
-                }
-            }
-        }
-
-        // Validar autores si se están actualizando
-        if (autores !== undefined) {
-            errores.autores = [];
-            
-            if (!Array.isArray(autores) || autores.length === 0) {
-                errores.autores.push('Debe proporcionar al menos un autor');
-            } else {
-                // Verificar si hay autores vacíos
-                const autoresVacios = autores.some(a => !a || a.trim() === '');
-                if (autoresVacios) {
-                    errores.autores.push('Los nombres de autores no pueden estar vacíos');
-                }
-                
-                // Convertir a minúsculas para comparación insensible a mayúsculas
-                const autoresLower = autores.map(a => a.trim().toLowerCase());
-                const autoresUnicos = [...new Set(autoresLower)];
-                
-                // Verificar duplicados (insensible a mayúsculas/minúsculas)
-                if (autoresUnicos.length !== autores.length) {
-                    // Encontrar los duplicados (insensible a mayúsculas/minúsculas) pero mantener el formato original
-                    const duplicados = [];
-                    const vistos = new Set();
-                    
-                    for (const autor of autores) {
-                        const autorLower = autor.trim().toLowerCase();
-                        if (vistos.has(autorLower)) {
-                            // Si ya vimos este autor (en minúsculas) pero con diferente formato
-                            const yaAgregado = duplicados.some(d => d.toLowerCase() === autorLower);
-                            if (!yaAgregado) {
-                                duplicados.push(autor);
-                            }
-                        } else {
-                            vistos.add(autorLower);
-                        }
-                    }
-                    
-                    errores.autores.push(`Autores duplicados: ${duplicados.join(', ')}`);
-                }
-                
-                // Verificar existencia de autores en la base de datos
-                if (autores.length > 0 && !autoresVacios) {
-                    const autoresExistentes = await mongoose.connection.collection('Autores').find({
-                        nombre: { $in: autores.map(a => a.trim()) }
-                    }).toArray();
-                    
-                    // Mantener el formato original de los autores no encontrados
-                    const autoresInvalidos = [];
-                    const vistos = new Set();
-                    
-                    for (const autor of autores) {
-                        const autorLower = autor.trim().toLowerCase();
-                        if (!vistos.has(autorLower) && 
-                            !autoresExistentes.some(ae => ae.nombre.toLowerCase() === autorLower)) {
-                            autoresInvalidos.push(autor);
-                            vistos.add(autorLower);
-                        }
-                    }
-                    
-                    if (autoresInvalidos.length > 0) {
-                        errores.autores.push(`Autores no encontrados: ${autoresInvalidos.join(', ')}`);
-                    }
-                }
-                
-                // Si no hay errores, eliminar el array
-                if (errores.autores.length === 0) {
-                    delete errores.autores;
-                }
-            }
-        }
-
         // Si hay errores de validación, devolverlos
         if (Object.keys(errores).length > 0) {
             return res.status(400).json({
@@ -654,33 +627,38 @@ const actualizarLibro = async (req, res) => {
             });
         }
 
-        // Preparar los datos para actualizar
-        const actualizacion = {};
-        if (titulo !== undefined) actualizacion.titulo = titulo.trim();
-        if (fecha_publicacion !== undefined) actualizacion.fecha_publicacion = new Date(fecha_publicacion);
-        if (sinopsis !== undefined) actualizacion.sinopsis = sinopsis.trim();
-        if (paginas !== undefined) actualizacion.paginas = parseInt(paginas, 10);
-        if (generos !== undefined) actualizacion.generos = generos.map(g => g.trim());
-        if (autores !== undefined) actualizacion.autores = autores;
-        if (disponibilidad !== undefined) actualizacion.disponibilidad = disponibilidad;
+        // Preparar los datos a actualizar
+        const datosActualizados = {};
+        if (titulo !== undefined) datosActualizados.titulo = titulo.trim();
+        if (fecha_publicacion !== undefined) datosActualizados.fecha_publicacion = new Date(fecha_publicacion);
+        if (sinopsis !== undefined) datosActualizados.sinopsis = sinopsis.trim();
+        if (paginas !== undefined) datosActualizados.paginas = parseInt(paginas, 10);
+        if (generosArray !== undefined) {
+            datosActualizados.generos = generosArray.length === 0 ? [] : generosArray.map(g => g.trim());
+        }
+        if (autoresArray !== undefined) {
+            datosActualizados.autores = autoresArray.length === 0 ? [] : autoresArray.map(a => a.trim());
+        }
+        if (disponibilidad !== undefined) datosActualizados.disponibilidad = disponibilidad;
 
         // Actualizar el libro
         const libroActualizado = await Libro.findByIdAndUpdate(
             id, 
-            actualizacion,
+            datosActualizados,
             { new: true, runValidators: true }
         );
 
         res.status(200).json({
             success: true,
-            message: 'Libro actualizado exitosamente',
             data: libroActualizado
         });
+
     } catch (error) {
-        console.error('Error al actualizar libro:', error);
+        console.error('Error al actualizar el libro:', error);
         res.status(500).json({
             success: false,
-            error: formatError(error)
+            error: 'Error al actualizar el libro',
+            details: error.message
         });
     }
 };
