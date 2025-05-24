@@ -84,7 +84,7 @@ const ListaAutores = () => {
       console.log('Enviando datos para nuevo autor:', datosNuevoAutor);
       
       // Enviar los datos al backend
-      const nuevoAutor = await autorService.crearAutor(datosNuevoAutor);
+      await autorService.crearAutor(datosNuevoAutor);
       
       // Si llegamos aquí, el autor se creó exitosamente
       setMostrarFormularioNuevo(false);
@@ -142,8 +142,8 @@ const ListaAutores = () => {
     }
     
     try {
-      // El servicio devuelve directamente los datos de la respuesta
-      const response = await autorService.eliminarAutor(idAEliminar);
+      // Eliminar el autor
+      await autorService.eliminarAutor(idAEliminar);
       
       // Si llegamos aquí, la eliminación fue exitosa
       setAutores(prevAutores => prevAutores.filter(a => a._id !== idAEliminar));

@@ -53,8 +53,9 @@ const LibrosPorGenero = () => {
       if (isNaN(fecha.getTime())) return 'Fecha inválida';
       
       return fecha.toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'long'
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
       });
     } catch (error) {
       console.error('Error al formatear la fecha:', error);
