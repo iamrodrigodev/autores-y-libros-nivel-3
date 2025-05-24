@@ -332,13 +332,17 @@
 }
 
 .form-acciones .btn-guardar {
-  background-color: #e3f2fd;
-  color: #1976d2;
+  background-color: var(--primary-main, #2c3e50);
+  color: white;
   border: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
 .form-acciones .btn-guardar:hover {
-  background-color: #bbdefb;
+  background-color: var(--primary-dark, #1a252f);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 @media (max-width: 480px) {
