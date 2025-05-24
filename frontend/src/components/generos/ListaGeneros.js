@@ -13,6 +13,7 @@ const ListaGeneros = () => {
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
   const [generoAEditar, setGeneroAEditar] = useState(null);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [mostrarFormularioNuevo, setMostrarFormularioNuevo] = useState(false);
   const [formulario, setFormulario] = useState({
     nombre: '',
     descripcion: ''
@@ -115,6 +116,17 @@ const ListaGeneros = () => {
     }
   };
 
+  const handleNuevoGeneroClick = () => {
+    setGeneroAEditar(null);
+    setFormulario({
+      nombre: '',
+      descripcion: ''
+    });
+    setError(null);
+    setErroresValidacion({});
+    setMostrarFormularioNuevo(true);
+  };
+
   const handleEditarClick = (genero) => {
     setGeneroAEditar(genero);
     setFormulario({
@@ -161,8 +173,15 @@ const ListaGeneros = () => {
     setErroresValidacion({});
     
     try {
-      // Enviar los datos al backend
-      const respuesta = await generoService.actualizarGenero(generoAEditar._id, formulario);
+      // Determinar si es una actualización o creación
+      const esActualizacion = !!generoAEditar?._id;
+      let respuesta;
+      
+      if (esActualizacion) {
+        respuesta = await generoService.actualizarGenero(generoAEditar._id, formulario);
+      } else {
+        respuesta = await generoService.crearGenero(formulario);
+      }
       
       if (respuesta && respuesta.success) {
         // Actualizar la lista de géneros
@@ -170,10 +189,14 @@ const ListaGeneros = () => {
         
         // Cerrar el formulario
         setMostrarFormulario(false);
+        setMostrarFormularioNuevo(false);
         
         // Mostrar mensaje de éxito
-        setMensajeExito(respuesta.message || 'Género actualizado exitosamente');
+        setMensajeExito(respuesta.message || (esActualizacion ? 'Género actualizado exitosamente' : 'Género creado exitosamente'));
         setMostrarExito(true);
+        
+        // Limpiar el formulario
+        setFormulario({ nombre: '', descripcion: '' });
       }
     } catch (error) {
       // Si el error es un objeto con mensajes de validación
@@ -186,7 +209,7 @@ const ListaGeneros = () => {
       } 
       // Error genérico
       else {
-        setError('No se pudo actualizar el género. Por favor, intente nuevamente.');
+        setError(`No se pudo ${generoAEditar?._id ? 'actualizar' : 'crear'} el género. Por favor, intente nuevamente.`);
       }
     }
   };
@@ -218,6 +241,12 @@ const ListaGeneros = () => {
     <div className="lista-generos-container">
       <div className="lista-header">
         <h2>Géneros Literarios</h2>
+        <button 
+          className="btn-nuevo"
+          onClick={handleNuevoGeneroClick}
+        >
+          + Nuevo Género
+        </button>
       </div>
       
       <div className="generos-grid">
@@ -296,11 +325,11 @@ const ListaGeneros = () => {
         </div>
       )}
 
-      {/* Modal de edición */}
-      {mostrarFormulario && (
+      {/* Modal de edición/creación */}
+      {(mostrarFormulario || mostrarFormularioNuevo) && (
         <div className="modal-overlay">
           <div className="modal">
-            <h3>Editar Género</h3>
+            <h3>{generoAEditar ? 'Editar Género' : 'Nuevo Género'}</h3>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
                 <label>Nombre:</label>
@@ -329,11 +358,18 @@ const ListaGeneros = () => {
                 )}
               </div>
               <div className="modal-acciones">
-                <button type="button" onClick={() => setMostrarFormulario(false)} className="btn-cancelar">
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setMostrarFormulario(false);
+                    setMostrarFormularioNuevo(false);
+                  }} 
+                  className="btn-cancelar"
+                >
                   Cancelar
                 </button>
                 <button type="submit" className="btn-guardar">
-                  Guardar Cambios
+                  {generoAEditar ? 'Guardar Cambios' : 'Crear Género'}
                 </button>
               </div>
               

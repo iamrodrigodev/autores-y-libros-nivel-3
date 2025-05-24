@@ -84,6 +84,35 @@ export const generoService = {
     }
   },
   
+  // Crear un nuevo género
+  async crearGenero(datosGenero) {
+    try {
+      const response = await api.post('/', datosGenero);
+      return response.data;
+    } catch (error) {
+      // Si hay una respuesta del servidor con errores
+      if (error.response && error.response.data) {
+        // Si hay errores de validación
+        if (error.response.data.errors) {
+          // Lanzar el objeto de errores directamente
+          throw error.response.data.errors;
+        }
+        // Si hay un mensaje de error general
+        if (error.response.data.message) {
+          throw new Error(error.response.data.message);
+        }
+      }
+      
+      // Si no hay respuesta del servidor
+      if (error.request) {
+        throw new Error('No se pudo conectar con el servidor. Verifica tu conexión a internet.');
+      }
+      
+      // Error en la configuración de la petición
+      throw new Error('Error en la configuración de la petición');
+    }
+  },
+  
   // Eliminar un género
   async eliminarGenero(id) {
     try {
