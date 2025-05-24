@@ -55,6 +55,84 @@ export const libroService = {
     }
   },
   
+  // Actualizar un libro existente
+  async actualizarLibro(id, datosLibro) {
+    try {
+      const response = await api.put(`/${id}`, datosLibro);
+      if (response.data && response.data.success) {
+        return response.data;
+      }
+      throw new Error('No se pudo actualizar el libro');
+    } catch (error) {
+      console.error(`Error al actualizar el libro con ID ${id}:`, error);
+      if (error.response) {
+        // Si el servidor devuelve un diccionario de errores de validación
+        if (error.response.data && typeof error.response.data === 'object' && !Array.isArray(error.response.data)) {
+          // Si es un objeto con un campo 'errors', usamos ese como el diccionario de errores
+          if (error.response.data.errors) {
+            throw error.response.data.errors;
+          }
+          // Si no, usamos el objeto directamente como diccionario de errores
+          throw error.response.data;
+        }
+        // Si hay un mensaje de error simple
+        const errorMessage = error.response.data.message || error.response.data.error || 'Error al actualizar el libro';
+        throw new Error(errorMessage);
+      }
+      throw new Error('Error al conectar con el servidor');
+    }
+  },
+  
+  // Crear un nuevo libro
+  async crearLibro(datosLibro) {
+    try {
+      const response = await api.post('/', datosLibro);
+      if (response.data && response.data.success) {
+        return response.data;
+      }
+      throw new Error('No se pudo crear el libro');
+    } catch (error) {
+      console.error('Error al crear el libro:', error);
+      if (error.response) {
+        // Si el servidor devuelve un diccionario de errores de validación
+        if (error.response.data && typeof error.response.data === 'object' && !Array.isArray(error.response.data)) {
+          // Si es un objeto con un campo 'errors', usamos ese como el diccionario de errores
+          if (error.response.data.errors) {
+            throw error.response.data.errors;
+          }
+          // Si no, usamos el objeto directamente como diccionario de errores
+          throw error.response.data;
+        }
+        // Si hay un mensaje de error simple
+        const errorMessage = error.response.data.message || error.response.data.error || 'Error al crear el libro';
+        throw new Error(errorMessage);
+      }
+      throw new Error('Error al conectar con el servidor');
+    }
+  },
+  
+  // Obtener todos los géneros
+  async obtenerGeneros() {
+    try {
+      const response = await axios.get('http://localhost:3001/api/generos');
+      return response.data.data || [];
+    } catch (error) {
+      console.error('Error al obtener los géneros:', error);
+      return [];
+    }
+  },
+  
+  // Obtener todos los autores
+  async obtenerAutores() {
+    try {
+      const response = await axios.get('http://localhost:3001/api/autores');
+      return response.data.data || [];
+    } catch (error) {
+      console.error('Error al obtener los autores:', error);
+      return [];
+    }
+  },
+  
   // Eliminar un libro por ID
   async eliminarLibro(id) {
     try {
@@ -69,7 +147,7 @@ export const libroService = {
         const errorMessage = error.response.data.message || error.response.data.error || 'Error al eliminar el libro';
         throw new Error(errorMessage);
       }
-      throw new Error(error.message || 'Error al conectar con el servidor');
+      throw new Error('Error al conectar con el servidor');
     }
   }
 };
