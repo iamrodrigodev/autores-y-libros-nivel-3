@@ -125,11 +125,22 @@ export const libroService = {
   // Obtener todos los autores
   async obtenerAutores() {
     try {
-      const response = await axios.get('http://localhost:3001/api/autores');
-      return response.data.data || [];
+      const response = await api.get('/autores');
+      return response.data;
     } catch (error) {
       console.error('Error al obtener los autores:', error);
-      return [];
+      throw error;
+    }
+  },
+  
+  // Obtener libros no disponibles
+  async obtenerLibrosNoDisponibles() {
+    try {
+      const response = await api.get('/no-disponibles');
+      return response.data.data || [];
+    } catch (error) {
+      console.error('Error al obtener los libros no disponibles:', error);
+      throw error;
     }
   },
   

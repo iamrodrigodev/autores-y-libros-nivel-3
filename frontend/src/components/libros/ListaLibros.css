@@ -21,6 +21,12 @@
   gap: 1rem;
 }
 
+.botones-accion {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
 .encabezado-acciones h2 {
   color: var(--primary-main, #2c3e50);
   font-size: 2rem;
@@ -50,6 +56,39 @@
   background-color: #218838;
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-secundario {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.btn-secundario:hover:not(:disabled) {
+  background-color: #5a6268;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-secundario:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.btn-nuevo:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  background-color: #28a745;
 }
 
 /* Grid de libros */

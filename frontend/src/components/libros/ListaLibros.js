@@ -6,6 +6,7 @@ import './ListaLibros.css';
 
 const ListaLibros = () => {
   const [libros, setLibros] = useState([]);
+  const [mostrandoAgotados, setMostrandoAgotados] = useState(false);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   const [reintentar, setReintentar] = useState(false);
@@ -36,7 +37,9 @@ const ListaLibros = () => {
       try {
         setCargando(true);
         setError(null);
-        const datos = await libroService.obtenerLibros();
+        const datos = mostrandoAgotados 
+          ? await libroService.obtenerLibrosNoDisponibles()
+          : await libroService.obtenerLibros();
         setLibros(datos);
       } catch (err) {
         console.error('Error al cargar los libros:', err);
@@ -47,7 +50,7 @@ const ListaLibros = () => {
     };
 
     cargarLibros();
-  }, [reintentar]);
+  }, [reintentar, mostrandoAgotados]);
 
   // Cargar géneros y autores al montar el componente
   useEffect(() => {
@@ -309,13 +312,23 @@ const ListaLibros = () => {
   return (
     <div className="lista-libros">
       <div className="encabezado-acciones">
-        <h2>Lista de Libros</h2>
-        <button 
-          className="btn-nuevo" 
-          onClick={abrirFormularioCreacion}
-        >
-          <span>+</span> Crear Libro
-        </button>
+        <h2>{mostrandoAgotados ? 'Libros Agotados' : 'Lista de Libros'}</h2>
+        <div className="botones-accion">
+          <button 
+            className="btn-secundario" 
+            onClick={() => setMostrandoAgotados(!mostrandoAgotados)}
+          >
+            {mostrandoAgotados ? 'Ver Todos los Libros' : 'Ver Libros Agotados'}
+          </button>
+          <button 
+            className="btn-nuevo" 
+            onClick={abrirFormularioCreacion}
+            disabled={mostrandoAgotados}
+            title={mostrandoAgotados ? 'No se pueden agregar libros desde la vista de agotados' : ''}
+          >
+            <span>+</span> Crear Libro
+          </button>
+        </div>
       </div>
       {/* Modal de éxito */}
       {mostrarExito && (
