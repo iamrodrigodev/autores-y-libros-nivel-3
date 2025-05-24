@@ -340,7 +340,7 @@ const ListaAutores = () => {
                 )}
               </div>
               
-              <div className="form-group">
+              <div className="form-group fecha-container">
                 <label>Fecha de Nacimiento</label>
                 <input
                   type="date"

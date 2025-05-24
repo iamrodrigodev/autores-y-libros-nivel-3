@@ -126,44 +126,49 @@
 /* Acciones del autor */
 .autor-acciones {
   display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin-top: 1.25rem;
-  padding-top: 1rem;
-  border-top: 1px solid #eee;
+  justify-content: flex-end;
+  padding: 1rem;
+  gap: 0.75rem;
+  border-top: 1px solid var(--gray-100, #f8f9fa);
   width: 100%;
 }
 
 .btn-actualizar,
 .btn-eliminar {
-  padding: 0.5rem 1rem;
   border: none;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  font-weight: 500;
   cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 600;
   transition: all 0.2s ease;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
 }
 
 .btn-actualizar {
-  background-color: #e3f2fd;
-  color: #1976d2;
+  background-color: #4285F4; /* Azul Google */
+  color: #FFFFFF;
+  border: 1px solid #3367D6;
 }
 
 .btn-actualizar:hover {
-  background-color: #bbdefb;
+  background-color: #3367D6; /* Azul más oscuro al pasar el ratón */
+  color: #FFFFFF;
+  transform: translateY(-1px);
 }
 
 .btn-eliminar {
-  background-color: #ffebee;
-  color: #d32f2f;
+  background-color: #FF4444; /* Rojo fuerte */
+  color: #FFFFFF;
+  border: 1px solid #CC0000;
 }
 
 .btn-eliminar:hover {
-  background-color: #ffcdd2;
+  background-color: #CC0000; /* Rojo más oscuro al pasar el ratón */
+  color: #FFFFFF;
+  transform: translateY(-1px);
 }
 
 /* Estilos para mensajes de error */
@@ -176,6 +181,43 @@
 
 .input-error {
   border-color: #dc3545 !important;
+}
+
+/* Estilos específicos para el campo de fecha */
+.form-group input[type="date"] {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 1rem;
+  /* Eliminar el ícono de error en navegadores WebKit (Chrome, Safari, etc.) */
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Eliminar el ícono de calendario en navegadores que lo permiten */
+.form-group input[type="date"]::-webkit-calendar-picker-indicator {
+  display: none;
+}
+
+/* Contenedor para el campo de fecha con mensaje de error */
+.form-group.fecha-container {
+  position: relative;
+}
+
+/* Estilo para el mensaje de error en el campo de fecha */
+.form-group.fecha-container .error-mensaje {
+  position: relative;
+  left: 0;
+  text-align: left;
+  margin-top: 0.25rem;
+  /* Asegurar que el mensaje de error se muestre correctamente */
+  display: block;
+}
+
+/* Eliminar el borde rojo en el campo de fecha cuando hay error */
+.form-group.fecha-container .input-error {
+  border-color: #ced4da !important;
 }
 
 /* Form actions */
