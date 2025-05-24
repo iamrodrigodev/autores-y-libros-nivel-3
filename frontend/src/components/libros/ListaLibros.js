@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { libroService } from '../../services/libroService';
 import { getGenreColor } from '../../styles/colors';
+import { FaSpinner } from 'react-icons/fa';
 import './ListaLibros.css';
 
 const ListaLibros = () => {
@@ -8,6 +9,11 @@ const ListaLibros = () => {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   const [reintentar, setReintentar] = useState(false);
+  const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
+  const [libroAEliminar, setLibroAEliminar] = useState(null);
+  const [eliminando, setEliminando] = useState(false);
+  const [mensajeExito, setMensajeExito] = useState('');
+  const [mostrarExito, setMostrarExito] = useState(false);
 
   useEffect(() => {
     const cargarLibros = async () => {
@@ -46,6 +52,44 @@ const ListaLibros = () => {
     }
   };
 
+  // Función para manejar la confirmación de eliminación
+  const confirmarEliminar = (libro) => {
+    setLibroAEliminar(libro);
+    setMostrarConfirmacion(true);
+  };
+
+  // Función para cancelar la eliminación
+  const cancelarEliminar = () => {
+    setMostrarConfirmacion(false);
+    setLibroAEliminar(null);
+  };
+
+  // Función para eliminar un libro
+  const eliminarLibro = async () => {
+    if (!libroAEliminar) return;
+    
+    try {
+      setEliminando(true);
+      const response = await libroService.eliminarLibro(libroAEliminar._id);
+      
+      // Actualizar la lista de libros eliminando el libro eliminado
+      setLibros(prevLibros => prevLibros.filter(libro => libro._id !== libroAEliminar._id));
+      
+      setMostrarConfirmacion(false);
+      
+      // Mostrar el mensaje de éxito del backend o uno por defecto
+      setMensajeExito(response?.message || 'Libro eliminado exitosamente');
+      setMostrarExito(true);
+      
+    } catch (error) {
+      console.error('Error al eliminar el libro:', error);
+      setError(error.message || 'No se pudo eliminar el libro. Intente nuevamente.');
+    } finally {
+      setEliminando(false);
+      setLibroAEliminar(null);
+    }
+  };
+
   if (cargando) {
     return (
       <div className="cargando-container">
@@ -74,6 +118,57 @@ const ListaLibros = () => {
       <div className="lista-header">
         <h2>Libros</h2>
       </div>
+      {/* Modal de éxito */}
+      {mostrarExito && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>¡Operación Exitosa!</h3>
+            <p>{mensajeExito}</p>
+            <div className="modal-acciones">
+              <button 
+                className="btn-aceptar"
+                onClick={() => setMostrarExito(false)}
+              >
+                Aceptar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {mostrarConfirmacion && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>Confirmar eliminación</h3>
+            <p>¿Estás seguro de que deseas eliminar el libro "{libroAEliminar?.titulo}"?</p>
+            <p className="advertencia">
+              <strong>Advertencia:</strong> Esta acción eliminará permanentemente el libro y no se podrá deshacer.
+            </p>
+            <div className="modal-acciones">
+              <button 
+                onClick={cancelarEliminar} 
+                className="btn-cancelar"
+                disabled={eliminando}
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={eliminarLibro} 
+                className="btn-confirmar"
+                disabled={eliminando}
+              >
+                {eliminando ? (
+                  <>
+                    <FaSpinner className="spinner" /> Eliminando...
+                  </>
+                ) : (
+                  'Eliminar'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       <div className="libros-grid">
         {libros.length > 0 ? (
@@ -125,6 +220,16 @@ const ListaLibros = () => {
               <div className="libro-sinopsis">
                 <h4>Sinopsis</h4>
                 <p>{libro.sinopsis}</p>
+              </div>
+              
+              <div className="libro-acciones">
+                <button 
+                  onClick={() => confirmarEliminar(libro)}
+                  className="btn-eliminar"
+                  title="Eliminar libro"
+                >
+                  Eliminar
+                </button>
               </div>
             </div>
           ))

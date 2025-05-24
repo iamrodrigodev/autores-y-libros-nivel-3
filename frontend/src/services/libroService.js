@@ -53,5 +53,23 @@ export const libroService = {
       console.error(`Error al obtener el libro con ID ${id}:`, error);
       throw error;
     }
+  },
+  
+  // Eliminar un libro por ID
+  async eliminarLibro(id) {
+    try {
+      const response = await api.delete(`/${id}`);
+      if (response.data && response.data.success) {
+        return response.data; // Devuelve el mensaje del backend
+      }
+      throw new Error('No se pudo eliminar el libro');
+    } catch (error) {
+      console.error(`Error al eliminar el libro con ID ${id}:`, error);
+      if (error.response) {
+        const errorMessage = error.response.data.message || error.response.data.error || 'Error al eliminar el libro';
+        throw new Error(errorMessage);
+      }
+      throw new Error(error.message || 'Error al conectar con el servidor');
+    }
   }
 };

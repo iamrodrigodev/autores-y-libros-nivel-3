@@ -24,4 +24,7 @@ router.post('/:id/autores', librosController.agregarAutores);
 // Ruta para agregar géneros a un libro
 router.post('/:id/generos', librosController.agregarGeneros);
 
+// Ruta para eliminar un libro por ID
+router.delete('/:id', librosController.eliminarLibro);
+
 module.exports = router;
