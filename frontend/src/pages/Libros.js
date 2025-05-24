@@ -1,10 +1,10 @@
 import React from 'react';
+import ListaLibros from '../components/libros/ListaLibros';
 
 const Libros = () => {
   return (
-    <div className="libros">
-      <h1>Catálogo de Libros</h1>
-      <p>Aquí encontrarás todos nuestros libros disponibles.</p>
+    <div className="libros-page">
+      <ListaLibros />
     </div>
   );
 };

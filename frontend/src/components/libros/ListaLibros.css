@@ -1,0 +1,234 @@
+/* Contenedor principal */
+.lista-libros-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Encabezado */
+.lista-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.lista-header h2 {
+  color: var(--primary-main, #2c3e50);
+  font-size: 2rem;
+  margin: 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--primary-light, #34495e);
+  display: inline-block;
+}
+
+/* Grid de libros */
+.libros-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+  padding: 0.5rem;
+}
+
+/* Tarjeta de libro */
+.libro-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.libro-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Cabecera de la tarjeta */
+.libro-cabecera {
+  padding: 1.25rem 1.5rem 1rem;
+  border-bottom: 1px solid var(--gray-200, #e9ecef);
+}
+
+.libro-titulo {
+  margin: 0 0 0.5rem;
+  color: var(--primary-main, #2c3e50);
+  font-size: 1.25rem;
+  line-height: 1.3;
+}
+
+.libro-meta {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-secondary, #6c757d);
+  font-size: 0.85rem;
+}
+
+/* Secciones de la tarjeta */
+.libro-autores,
+.libro-generos,
+.libro-sinopsis {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--gray-100, #f8f9fa);
+}
+
+.libro-sinopsis {
+  flex-grow: 1;
+  border-bottom: none;
+}
+
+/* Títulos de sección */
+h4 {
+  margin: 0 0 0.5rem;
+  color: var(--primary-main, #2c3e50);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Lista de autores */
+.autores-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.autor {
+  font-size: 0.95rem;
+  color: var(--text-primary, #2c3e50);
+  line-height: 1.5;
+}
+
+.sin-autor {
+  color: var(--text-secondary, #6c757d);
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+/* Lista de géneros */
+.generos-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.genero {
+  background-color: var(--genre-color-light, #f8f9fa);
+  color: var(--genre-color, #2c3e50);
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  border: 1px solid var(--genre-color, #2c3e50);
+  transition: all 0.2s ease;
+}
+
+.genero:hover {
+  background-color: var(--genre-color, #2c3e50);
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* Sinopsis */
+.libro-sinopsis p {
+  margin: 0;
+  color: var(--text-secondary, #6c757d);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  line-clamp: 5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-height: 8em; /* Fallback for non-WebKit browsers */
+}
+
+/* Mensaje de sin datos */
+.sin-datos {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--text-secondary, #6c757d);
+  padding: 3rem 1rem;
+  font-style: italic;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Indicador de carga */
+.cargando-container {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  text-align: center;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: var(--primary-main, #2c3e50);
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Mensaje de error */
+.error-container {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 2rem;
+  background-color: #f8d7da;
+  color: #721c24;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.error-mensaje {
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+/* Botón de reintentar */
+.btn-reintentar {
+  background-color: var(--primary-main, #2c3e50);
+  color: white;
+  padding: 0.5rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.btn-reintentar:hover {
+  background-color: var(--primary-dark, #1a252f);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .libros-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .lista-libros-container {
+    padding: 1rem 0.5rem;
+  }
+  
+  .libro-card {
+    margin: 0 0.5rem;
+  }
+}

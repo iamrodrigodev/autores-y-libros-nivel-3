@@ -17,22 +17,22 @@ const formatError = (error) => {
 
 // Función para validar los datos del género
 const validarDatosGenero = (nombre, descripcion, esActualizacion = false) => {
-    const errores = [];
+    const errores = {};
 
     if (!esActualizacion || (esActualizacion && nombre !== undefined)) {
         if (!nombre || nombre.trim() === '') {
-            errores.push('El nombre es obligatorio');
+            errores.nombre = 'El nombre es obligatorio';
         } else if (nombre.trim().length < 3) {
-            errores.push('El nombre debe tener al menos 3 caracteres');
+            errores.nombre = 'El nombre debe tener al menos 3 caracteres';
         }
     }
 
     if (!esActualizacion || (esActualizacion && descripcion !== undefined)) {
         if (descripcion !== undefined) {
             if (descripcion.trim() === '') {
-                errores.push('La descripción no puede estar vacía');
+                errores.descripcion = 'La descripción no puede estar vacía';
             } else if (descripcion.trim().length < 10 || descripcion.trim().length > 500) {
-                errores.push('La descripción debe tener entre 10 y 500 caracteres');
+                errores.descripcion = 'La descripción debe tener entre 10 y 500 caracteres';
             }
         }
     }
@@ -47,7 +47,7 @@ const crearGenero = async (req, res) => {
         
         // Validar datos
         const erroresValidacion = validarDatosGenero(nombre, descripcion);
-        if (erroresValidacion.length > 0) {
+        if (Object.keys(erroresValidacion).length > 0) {
             return res.status(400).json({
                 success: false,
                 message: 'Error de validación',
@@ -224,7 +224,7 @@ const actualizarGenero = async (req, res) => {
             true
         );
         
-        if (erroresValidacion.length > 0) {
+        if (Object.keys(erroresValidacion).length > 0) {
             return res.status(400).json({
                 success: false,
                 message: 'Error de validación',
@@ -258,28 +258,16 @@ const actualizarGenero = async (req, res) => {
             });
             
             if (generoPorDescripcion) {
-                erroresDuplicados.descripcion = 'Ya existe un género con esta descripción';
+                erroresDuplicados.descripcion = 'La descripción del género ya está en uso';
             }
         }
         
-        // Si hay errores de validación o duplicados, devolverlos todos juntos
-        if (erroresValidacion.length > 0 || Object.keys(erroresDuplicados).length > 0) {
-            const errors = {};
-            
-            // Agregar errores de validación
-            if (erroresValidacion.length > 0) {
-                errors.validacion = erroresValidacion;
-            }
-            
-            // Agregar errores de duplicados
-            if (Object.keys(erroresDuplicados).length > 0) {
-                Object.assign(errors, erroresDuplicados);
-            }
-            
+        // Si hay errores de duplicados, devolverlos
+        if (Object.keys(erroresDuplicados).length > 0) {
             return res.status(400).json({
                 success: false,
                 message: 'Error de validación',
-                errors: errors
+                errors: erroresDuplicados
             });
         }
 

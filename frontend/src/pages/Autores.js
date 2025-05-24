@@ -1,10 +1,10 @@
 import React from 'react';
+import ListaAutores from '../components/autores/ListaAutores';
 
 const Autores = () => {
   return (
-    <div className="autores">
-      <h1>Autores</h1>
-      <p>Descubre a los autores de nuestra colección.</p>
+    <div className="autores-page">
+      <ListaAutores />
     </div>
   );
 };

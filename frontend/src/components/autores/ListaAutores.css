@@ -1,0 +1,211 @@
+/* Contenedor principal */
+.lista-autores-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Encabezado */
+.lista-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.lista-header h2 {
+  color: var(--primary-main, #2c3e50);
+  font-size: 2rem;
+  margin: 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--primary-light, #34495e);
+  display: inline-block;
+}
+
+/* Grid de autores */
+.autores-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+  padding: 0.5rem;
+}
+
+/* Tarjeta de autor */
+.autor-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.autor-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Avatar del autor */
+.autor-avatar {
+  width: 80px;
+  height: 80px;
+  background-color: var(--primary-main, #2c3e50);
+  color: white;
+  font-size: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  margin: 1.5rem auto 1rem;
+  font-weight: 600;
+}
+
+/* Información del autor */
+.autor-info {
+  padding: 0 1.5rem 1.5rem;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.autor-nombre {
+  margin: 0 0 1rem;
+  color: var(--primary-main, #2c3e50);
+  font-size: 1.4rem;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* Detalles del autor */
+.autor-detalle {
+  margin-bottom: 1.25rem;
+}
+
+.detalle-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.detalle-etiqueta {
+  font-weight: 500;
+  color: var(--text-secondary, #6c757d);
+  margin-right: 0.5rem;
+}
+
+.detalle-valor {
+  color: var(--text-primary, #2c3e50);
+  text-align: right;
+  flex-grow: 1;
+}
+
+/* Biografía */
+.autor-biografia {
+  margin: 1rem 0;
+  padding: 1rem;
+  background-color: var(--gray-50, #f8f9fa);
+  border-radius: 6px;
+  flex-grow: 1;
+}
+
+.autor-biografia p {
+  margin: 0;
+  color: var(--text-secondary, #6c757d);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  line-clamp: 4; /* Propiedad estándar */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+/* Mensaje de sin datos */
+.sin-datos {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--text-secondary, #6c757d);
+  padding: 3rem 1rem;
+  font-style: italic;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Indicador de carga */
+.cargando-container {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  text-align: center;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: var(--primary-main, #2c3e50);
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Mensaje de error */
+.error-container {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 2rem;
+  background-color: #f8d7da;
+  color: #721c24;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.error-mensaje {
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+/* Botón de reintentar */
+.btn-reintentar {
+  background-color: var(--primary-main, #2c3e50);
+  color: white;
+  padding: 0.5rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.btn-reintentar:hover {
+  background-color: var(--primary-dark, #1a252f);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .autores-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .lista-autores-container {
+    padding: 1rem 0.5rem;
+  }
+  
+  .autor-card {
+    margin: 0 0.5rem;
+  }
+}
