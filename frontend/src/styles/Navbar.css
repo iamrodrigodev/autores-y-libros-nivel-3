@@ -23,6 +23,12 @@
   text-decoration: none;
 }
 
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
 .nav-links {
   display: flex;
   gap: 2rem;
@@ -41,4 +47,23 @@
 
 .nav-link:hover {
   color: var(--secondary-light);
+}
+
+.btn-logout {
+  background-color: transparent;
+  color: var(--primary-contrast-text);
+  border: 1px solid var(--primary-contrast-text);
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.btn-logout:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--secondary-light);
+  border-color: var(--secondary-light);
 }
