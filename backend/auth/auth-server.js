@@ -3,12 +3,25 @@
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+// Al principio del archivo, reemplaza:
 require('dotenv').config();
+
+// Con:
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const usuariosRoutes = require('./src/routes/usuarios.route');
 
 const app = express();
-app.use(cors());
+
+const corsOptions = {
+  origin: 'http://localhost:3000',
+  credentials: true,
+  methods: ['POST'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Conexión a la base de datos
