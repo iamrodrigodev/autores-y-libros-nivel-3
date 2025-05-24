@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { autorService } from '../../services/autorService';
+import { getGenreColor } from '../../styles/colors';
 import '../libros/ListaLibros.css'; // Reusing the same styles as ListaLibros
 
 const LibrosPorAutor = () => {
@@ -223,40 +224,29 @@ const LibrosPorAutor = () => {
                   </p>
                 </div>
                 {libro.generos && libro.generos.length > 0 && (
-                  <div className="detalle-item" style={{
-                    display: 'flex',
-                    gap: '0.5rem',
-                    flexWrap: 'wrap',
-                    alignItems: 'flex-start'
-                  }}>
-                    <span className="detalle-etiqueta" style={{
-                      fontWeight: '600',
-                      color: '#555',
-                      minWidth: '100px',
+                  <div className="libro-generos">
+                    <h4 style={{
+                      margin: '0 0 0.5rem',
                       fontSize: '0.9rem',
-                      marginTop: '0.25rem'
-                    }}>Géneros:</span>
-                    <div style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: '0.5rem',
-                      flex: 1
-                    }}>
-                      {libro.generos.map((genero, index) => (
-                        <span 
-                          key={index} 
-                          style={{
-                            backgroundColor: '#e0e0e0',
-                            color: '#333',
-                            padding: '0.25rem 0.75rem',
-                            borderRadius: '12px',
-                            fontSize: '0.8rem',
-                            whiteSpace: 'nowrap'
-                          }}
-                        >
-                          {typeof genero === 'object' ? genero.nombre : genero}
-                        </span>
-                      ))}
+                      color: '#555',
+                      fontWeight: '600'
+                    }}>Géneros</h4>
+                    <div className="generos-lista">
+                      {libro.generos.map((genero, idx) => {
+                        const generoNombre = typeof genero === 'object' ? genero.nombre : genero;
+                        return (
+                          <span 
+                            key={`genero-${idx}`}
+                            className="genero"
+                            style={{
+                              '--genre-color': getGenreColor(generoNombre),
+                              '--genre-color-light': `${getGenreColor(generoNombre)}33`
+                            }}
+                          >
+                            {generoNombre}
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
