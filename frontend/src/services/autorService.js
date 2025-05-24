@@ -13,6 +13,130 @@ const api = axios.create({
 
 // Servicio para manejar las operaciones de autores
 export const autorService = {
+  // Obtener libros por ID de autor
+  async obtenerLibrosPorAutor(id) {
+    // Validar que el ID no sea undefined, null o vacío
+    if (!id) {
+      const errorMsg = 'Error: No se proporcionó un ID de autor válido';
+      console.error(errorMsg, id);
+      throw new Error(errorMsg);
+    }
+
+    try {
+      console.log('=== Iniciando petición para obtener libros del autor ===');
+      console.log('ID del autor:', id);
+      console.log('URL de la petición:', `${API_URL}/${id}/libros`);
+      
+      const response = await api.get(`/${id}/libros`);
+      
+      console.log('=== Respuesta del servidor ===');
+      console.log('Estado:', response.status, response.statusText);
+      console.log('Datos:', response.data);
+      
+      if (response.data && response.data.success) {
+        console.log('Libros obtenidos exitosamente');
+        return response.data;
+      }
+      
+      const errorMsg = response.data?.error || 'Error al obtener los libros del autor';
+      console.error('Error en la respuesta del servidor:', errorMsg);
+      throw new Error(errorMsg);
+      
+    } catch (error) {
+      console.error('=== Error al obtener los libros del autor ===');
+      
+      if (error.response) {
+        // El servidor respondió con un estado de error
+        console.error('Detalles del error:', {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+          headers: error.response.headers
+        });
+        
+        const serverError = error.response.data?.error || 
+                          `Error del servidor: ${error.response.status} ${error.response.statusText}`;
+        console.error('Mensaje de error:', serverError);
+        throw new Error(serverError);
+        
+      } else if (error.request) {
+        // La petición fue hecha pero no se recibió respuesta
+        console.error('No se recibió respuesta del servidor. Detalles:', error.request);
+        throw new Error('No se pudo conectar con el servidor. Verifica tu conexión a internet.');
+        
+      } else {
+        // Algo ocurrió en la configuración de la petición
+        console.error('Error en la configuración de la petición:', error.message);
+        console.error('Configuración de la petición fallida:', error.config);
+        throw new Error('Error en la configuración de la petición: ' + error.message);
+      }
+    } finally {
+      console.log('=== Fin de la petición de libros del autor ===\n');
+    }
+  },
+  
+  // Obtener un autor por ID
+  async obtenerAutorPorId(id) {
+    // Validar que el ID no sea undefined, null o vacío
+    if (!id) {
+      const errorMsg = 'Error: No se proporcionó un ID de autor válido';
+      console.error(errorMsg, id);
+      throw new Error(errorMsg);
+    }
+
+    try {
+      console.log('=== Iniciando petición para obtener autor por ID ===');
+      console.log('ID del autor:', id);
+      console.log('URL de la petición:', `${API_URL}/${id}`);
+      
+      const response = await api.get(`/${id}`);
+      
+      console.log('=== Respuesta del servidor ===');
+      console.log('Estado:', response.status, response.statusText);
+      console.log('Datos:', response.data);
+      
+      if (response.data && response.data.success) {
+        console.log('Autor obtenido exitosamente');
+        return response.data;
+      }
+      
+      const errorMsg = response.data?.error || 'Error al obtener el autor';
+      console.error('Error en la respuesta del servidor:', errorMsg);
+      throw new Error(errorMsg);
+      
+    } catch (error) {
+      console.error('=== Error al obtener el autor por ID ===');
+      
+      if (error.response) {
+        // El servidor respondió con un estado de error
+        console.error('Detalles del error:', {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+          headers: error.response.headers
+        });
+        
+        const serverError = error.response.data?.error || 
+                          `Error del servidor: ${error.response.status} ${error.response.statusText}`;
+        console.error('Mensaje de error:', serverError);
+        throw new Error(serverError);
+        
+      } else if (error.request) {
+        // La petición fue hecha pero no se recibió respuesta
+        console.error('No se recibió respuesta del servidor. Detalles:', error.request);
+        throw new Error('No se pudo conectar con el servidor. Verifica tu conexión a internet.');
+        
+      } else {
+        // Algo ocurrió en la configuración de la petición
+        console.error('Error en la configuración de la petición:', error.message);
+        console.error('Configuración de la petición fallida:', error.config);
+        throw new Error('Error en la configuración de la petición: ' + error.message);
+      }
+    } finally {
+      console.log('=== Fin de la petición de autor por ID ===\n');
+    }
+  },
+  
   // Crear un nuevo autor
   async crearAutor(datosAutor) {
     try {
@@ -88,7 +212,7 @@ export const autorService = {
   },
 
   // Actualizar un autor
-  async actualizarAutor(id, datos) {
+  async actualizarAutor(_id, datos) {
     try {
       // Asegurarse de que los datos estén en el formato correcto
       const datosParaEnviar = {
@@ -97,11 +221,11 @@ export const autorService = {
         fecha_nacimiento: datos.fecha_nacimiento || undefined
       };
       
-      console.log('Enviando solicitud PUT a:', `${API_URL}/${id}`, 'con datos:', datosParaEnviar);
+      console.log('Enviando solicitud PUT a:', `${API_URL}/${_id}`, 'con datos:', datosParaEnviar);
       
       // Usar axios directamente para más control
       const response = await axios.put(
-        `${API_URL}/${id}`, 
+        `${API_URL}/${_id}`, 
         datosParaEnviar,
         {
           headers: {
@@ -181,9 +305,9 @@ export const autorService = {
   },
 
   // Eliminar un autor
-  async eliminarAutor(id) {
+  async eliminarAutor(_id) {
     try {
-      const response = await api.delete(`/${id}`);
+      const response = await api.delete(`/${_id}`);
       return response.data;
     } catch (error) {
       console.error('Error al eliminar el autor:', error);

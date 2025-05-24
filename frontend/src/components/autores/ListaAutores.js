@@ -1,8 +1,24 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { FaBook } from 'react-icons/fa';
 import { autorService } from '../../services/autorService';
 import './ListaAutores.css';
 
 const ListaAutores = () => {
+  const navigate = useNavigate();
+  
+  const handleVerLibrosClick = (autor) => {
+    // Usar autor._id o autor.id, lo que esté disponible
+    const autorId = autor._id || autor.id;
+    
+    if (!autorId) {
+      console.error('No se proporcionó un ID de autor válido:', autor);
+      return;
+    }
+    
+    console.log('Navegando a libros del autor con ID:', autorId);
+    navigate(`/autores/libros/${autorId}`);
+  };
   const [autores, setAutores] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
@@ -563,18 +579,29 @@ const ListaAutores = () => {
                 )}
                 
                 <div className="autor-acciones">
-                  <button 
-                    className="btn-actualizar"
-                    onClick={() => handleEditarClick(autor)}
-                  >
-                    Actualizar
-                  </button>
-                  <button 
-                    className="btn-eliminar"
-                    onClick={() => handleEliminarClick(autor)}
-                  >
-                    Eliminar
-                  </button>
+                  <div className="acciones-izquierda">
+                    <button 
+                      className="btn-ver-libros"
+                      onClick={() => handleVerLibrosClick(autor)}
+                      title="Ver libros de este autor"
+                    >
+                      <FaBook />
+                    </button>
+                  </div>
+                  <div className="acciones-derecha">
+                    <button 
+                      className="btn-actualizar"
+                      onClick={() => handleEditarClick(autor)}
+                    >
+                      Actualizar
+                    </button>
+                    <button 
+                      className="btn-eliminar"
+                      onClick={() => handleEliminarClick(autor)}
+                    >
+                      Eliminar
+                    </button>
+                  </div>
                 </div>
                 
 

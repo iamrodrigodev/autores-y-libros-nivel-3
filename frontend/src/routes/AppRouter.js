@@ -6,6 +6,7 @@ import Libros from '../pages/Libros';
 import Autores from '../pages/Autores';
 import Generos from '../pages/Generos';
 import LibrosPorGenero from '../components/generos/LibrosPorGenero';
+import LibrosPorAutor from '../components/autores/LibrosPorAutor';
 
 const AppRouter = () => {
   return (
@@ -18,6 +19,7 @@ const AppRouter = () => {
           <Route path="/autores" element={<Autores />} />
           <Route path="/generos" element={<Generos />} />
           <Route path="/generos/libros/:id" element={<LibrosPorGenero />} />
+          <Route path="/autores/libros/:id" element={<LibrosPorAutor />} />
         </Routes>
       </main>
       <Footer />
