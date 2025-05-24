@@ -6,7 +6,6 @@ const ListaAutores = () => {
   const [autores, setAutores] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
-  const [reintentar, setReintentar] = useState(false);
   const autorAEliminarId = useRef(null);
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
   const [autorAEditar, setAutorAEditar] = useState(null);
@@ -36,7 +35,7 @@ const ListaAutores = () => {
 
   useEffect(() => {
     cargarAutores();
-  }, [reintentar]);
+  }, []);
 
   // Función para formatear la fecha de nacimiento
   const formatearFecha = (fechaString) => {
