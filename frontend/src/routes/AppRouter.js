@@ -8,10 +8,10 @@ import Generos from '../pages/Generos';
 import LibrosPorGenero from '../components/generos/LibrosPorGenero';
 import LibrosPorAutor from '../components/autores/LibrosPorAutor';
 
-const AppRouter = () => {
+const AppRouter = ({ onLogout }) => {
   return (
     <div className="app">
-      <Navbar />
+      <Navbar onLogout={onLogout} />
       <main className="main-content">
         <Routes>
           <Route path="/" element={<Navigate to="/libros" replace />} />

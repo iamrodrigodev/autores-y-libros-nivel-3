@@ -1,16 +1,12 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import '../../styles/Navbar.css';
 
-const Navbar = () => {
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    // Aquí iría la lógica de cierre de sesión
-    // Por ahora solo redirigimos al inicio
-    navigate('/');
-    // Si necesitas limpiar el token o datos de sesión, hazlo aquí
-    // localStorage.removeItem('token');
+const Navbar = ({ onLogout }) => {
+  const handleLogoutClick = async () => {
+    if (onLogout) {
+      await onLogout();
+    }
   };
 
   return (
@@ -37,7 +33,7 @@ const Navbar = () => {
               </Link>
             </li>
           </ul>
-          <button onClick={handleLogout} className="btn-logout">
+          <button onClick={handleLogoutClick} className="btn-logout">
             Cerrar sesión
           </button>
         </div>

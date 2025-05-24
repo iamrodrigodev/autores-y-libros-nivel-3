@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../../config/supabase';
 import '../../styles/LoginModal.css';
 
 const LoginModal = ({ isOpen, onClose, onLogin }) => {
@@ -11,6 +12,20 @@ const LoginModal = ({ isOpen, onClose, onLogin }) => {
     password: ''
   });
 
+  // Limpiar el formulario cuando se muestre el modal
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({
+        email: '',
+        password: ''
+      });
+      setErrores({
+        email: '',
+        password: ''
+      });
+    }
+  }, [isOpen]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -19,7 +34,7 @@ const LoginModal = ({ isOpen, onClose, onLogin }) => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Validaciones
@@ -39,15 +54,67 @@ const LoginModal = ({ isOpen, onClose, onLogin }) => {
     
     // Si no hay errores, proceder con el login
     if (Object.keys(nuevosErrores).length === 0) {
-      onLogin(formData);
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
+
+        if (error) throw error;
+        
+        // Si el login es exitoso, llamamos a onLogin con los datos del usuario
+        if (data?.user) {
+          onLogin({
+            email: data.user.email,
+            id: data.user.id,
+            // Agrega más campos del usuario si es necesario
+          });
+        }
+      } catch (error) {
+        console.error('Error al iniciar sesión:', error.message);
+        setErrores({
+          ...errores,
+          submit: 'Error al iniciar sesión. Verifica tus credenciales.'
+        });
+      }
     }
   };
 
-  if (!isOpen) return null;
+  // Estilos de depuración
+  const debugStyles = {
+    overlay: {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 9999,
+    },
+    modal: {
+      backgroundColor: 'white',
+      padding: '2rem',
+      borderRadius: '8px',
+      width: '100%',
+      maxWidth: '400px',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+      position: 'relative',
+    },
+  };
+
+  if (!isOpen) {
+    console.log('Modal cerrado: isOpen es false');
+    return null;
+  } else {
+    console.log('Modal abierto: isOpen es true');
+  }
 
   return (
-    <div className="modal-overlay">
-      <div className="login-modal">
+    <div className="modal-overlay" style={debugStyles.overlay}>
+      <div className="login-modal" style={debugStyles.modal}>
         <div className="login-header">
           <h2>Iniciar Sesión</h2>
           <p>Ingresa tus credenciales para continuar</p>
@@ -88,10 +155,31 @@ const LoginModal = ({ isOpen, onClose, onLogin }) => {
             )}
           </div>
 
-          <div className="form-actions">
-            <button type="submit" className="btn-login">
+          <div className="form-actions" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+            <button 
+              type="submit" 
+              className="btn-login" 
+              style={{ 
+                width: '100%',
+                marginBottom: '15px'
+              }}
+            >
               Iniciar Sesión
             </button>
+            {errores.submit && (
+              <div 
+                className="mensaje-error" 
+                style={{ 
+                  color: '#d32f2f',
+                  fontSize: '0.9rem',
+                  textAlign: 'center',
+                  width: '100%',
+                  marginTop: '5px'
+                }}
+              >
+                {errores.submit}
+              </div>
+            )}
           </div>
         </form>
       </div>
