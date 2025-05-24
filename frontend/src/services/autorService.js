@@ -13,6 +13,38 @@ const api = axios.create({
 
 // Servicio para manejar las operaciones de autores
 export const autorService = {
+  // Crear un nuevo autor
+  async crearAutor(datosAutor) {
+    try {
+      console.log('Enviando datos para crear autor:', datosAutor);
+      const response = await api.post('/', datosAutor);
+      console.log('Respuesta del servidor (crear autor):', response.data);
+      
+      if (response.data && response.data.success) {
+        return response.data.data;
+      }
+      
+      throw new Error(response.data?.error || 'Error al crear el autor');
+    } catch (error) {
+      console.error('Error al crear el autor:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
+      
+      // Si el error contiene mensajes de validación del servidor, devolverlos
+      if (error.response?.data?.errors) {
+        throw error.response.data.errors;
+      }
+      
+      if (error.response?.data?.error) {
+        throw new Error(error.response.data.error);
+      }
+      
+      throw new Error('Error al conectar con el servidor. Por favor, intente nuevamente.');
+    }
+  },
+  
   // Obtener todos los autores
   async obtenerAutores() {
     try {

@@ -8,8 +8,11 @@
 
 /* Encabezado */
 .lista-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 2rem;
-  text-align: center;
+  padding: 0 1rem;
 }
 
 .lista-header h2 {
@@ -169,6 +172,45 @@
   background-color: #CC0000; /* Rojo más oscuro al pasar el ratón */
   color: #FFFFFF;
   transform: translateY(-1px);
+}
+
+/* Botón Nuevo */
+.btn-nuevo {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-nuevo:hover {
+  background-color: #218838;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos para mensajes de advertencia */
+.modal .advertencia {
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 0.75rem;
+  border-radius: 4px;
+  border-left: 4px solid #ffeeba;
+  text-align: left;
+  font-size: 0.9rem;
+  margin: 1.5rem 0;
+}
+
+.modal .advertencia p {
+  margin: 0;
+  color: #856404;
 }
 
 /* Estilos para mensajes de error */
