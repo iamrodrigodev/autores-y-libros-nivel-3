@@ -134,10 +134,3 @@ db.Libros.insertMany([
     { titulo: "Peruana", fecha_publicacion: ISODate("1872-01-01"), sinopsis: "Una colección de relatos y leyendas de Ricardo Palma que exploran mitos, supersticiones y misterios populares del Perú.", disponibilidad: true, paginas: 200, generos: ["Ficción", "Historia"], autores: ["Ricardo Palma"]},
     { titulo: "Cuentos de la Abuela", fecha_publicacion: ISODate("1890-01-01"), sinopsis: "Una serie de cuentos populares peruanos recopilados y adaptados por Ricardo Palma, explorando la cultura popular de su país.", disponibilidad: true, paginas: 250, generos: ["Ficción", "Historia"], autores: ["Ricardo Palma"]}
 ]);
-
-// Creacion de Usuarios:
-db.Usuarios.insertMany([
-    { nombre: "Rodrigo", apellido_paterno: "Infanzón", apellido_materno: "Acosta", "telefono": "948899033", direccion: "Av. Principal 123, Lima", clave: "admin", fecha_nacimiento: ISODate("2004-04-16"), token : "" },
-    { nombre: "Daniel", apellido_paterno: "Aguilar", apellido_materno: "Chirinos", "telefono": "943728489", direccion: "Calle Secundaria 456, Lima", clave: "admin", fecha_nacimiento: ISODate("2004-04-16"), token: "" },
-    { nombre: "Enyel", apellido_paterno: "Panta", apellido_materno: "Huaracha", "telefono": "919056254", direccion: "Av. Lima", clave: "admin", fecha_nacimiento: ISODate("2005-04-23"), token: ""}
-]);
