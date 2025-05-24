@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const autoresController = require('../controllers/autores.controller');
-//const { authMiddleware } = require('../../auth/auth');
 
 // Ruta para crear un nuevo autor
 router.post('/', autoresController.crearAutor);

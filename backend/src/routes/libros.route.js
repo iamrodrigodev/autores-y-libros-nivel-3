@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const librosController = require('../controllers/libros.controller');
-//const { authMiddleware } = require('../../auth/auth');
 
 // Ruta para crear un nuevo libro
 router.post('/', librosController.crearLibro);
