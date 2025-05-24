@@ -75,9 +75,42 @@ const ListaLibros = () => {
     }));
   };
 
+  // Función para abrir el formulario de creación
+  const abrirFormularioCreacion = () => {
+    setLibroAEditar(null);
+    setFormulario({
+      titulo: '',
+      fecha_publicacion: '',
+      paginas: '',
+      sinopsis: '',
+      disponibilidad: true,
+      generos: [],
+      autores: []
+    });
+    setNuevoGenero('');
+    setNuevoAutor('');
+    setErroresValidacion({});
+    setMostrarFormulario(true);
+  };
+
+  // Función para abrir el formulario de edición
+  const abrirFormularioEdicion = (libro) => {
+    setLibroAEditar(libro);
+    setFormulario({
+      titulo: libro.titulo || '',
+      fecha_publicacion: libro.fecha_publicacion ? libro.fecha_publicacion.split('T')[0] : '',
+      paginas: libro.paginas || '',
+      sinopsis: libro.sinopsis || '',
+      disponibilidad: libro.disponibilidad !== undefined ? libro.disponibilidad : true,
+      generos: libro.generos ? libro.generos.map(g => g._id || g) : [],
+      autores: libro.autores ? libro.autores.map(a => a._id || a) : []
+    });
+    setMostrarFormulario(true);
+  };
+
   // Función para manejar la edición de un libro
   const handleEditarClick = (libro) => {
-    inicializarFormularioEdicion(libro);
+    abrirFormularioEdicion(libro);
   };
 
   // Función para inicializar el formulario con los datos del libro a editar
@@ -274,9 +307,15 @@ const ListaLibros = () => {
   }
 
   return (
-    <div className="lista-libros-container">
-      <div className="lista-header">
-        <h2>Libros</h2>
+    <div className="lista-libros">
+      <div className="encabezado-acciones">
+        <h2>Lista de Libros</h2>
+        <button 
+          className="btn-nuevo" 
+          onClick={abrirFormularioCreacion}
+        >
+          <span>+</span> Crear Libro
+        </button>
       </div>
       {/* Modal de éxito */}
       {mostrarExito && (

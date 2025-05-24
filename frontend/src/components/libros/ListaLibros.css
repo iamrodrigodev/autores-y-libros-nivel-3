@@ -12,13 +12,44 @@
   text-align: center;
 }
 
-.lista-header h2 {
+.encabezado-acciones {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.encabezado-acciones h2 {
   color: var(--primary-main, #2c3e50);
   font-size: 2rem;
   margin: 0;
   padding-bottom: 0.5rem;
   border-bottom: 2px solid var(--primary-light, #34495e);
   display: inline-block;
+}
+
+.btn-nuevo {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.btn-nuevo:hover {
+  background-color: #218838;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Grid de libros */
