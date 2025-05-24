@@ -18,6 +18,7 @@ const ListaAutores = () => {
   const [mostrarExito, setMostrarExito] = useState(false);
   const [mensajeExito, setMensajeExito] = useState('');
   const [erroresValidacion, setErroresValidacion] = useState({});
+  const [mostrarFormularioNuevo, setMostrarFormularioNuevo] = useState(false);
 
   const cargarAutores = async () => {
     try {
@@ -53,23 +54,83 @@ const ListaAutores = () => {
     }
   };
 
+  const handleNuevoAutorClick = () => {
+    setAutorAEditar(null);
+    setFormulario({
+      nombre: '',
+      nacionalidad: '',
+      fecha_nacimiento: ''
+    });
+    setError(null);
+    setErroresValidacion({});
+    setMostrarFormularioNuevo(true);
+  };
+
+  const handleSubmitNuevoAutor = async (e) => {
+    e.preventDefault();
+    
+    // Limpiar errores previos
+    setError(null);
+    setErroresValidacion({});
+    
+    try {
+      // Preparar los datos para enviar
+      const datosNuevoAutor = {
+        nombre: formulario.nombre ? formulario.nombre.trim() : '',
+        nacionalidad: formulario.nacionalidad ? formulario.nacionalidad.trim() : '',
+        fecha_nacimiento: formulario.fecha_nacimiento || null
+      };
+      
+      console.log('Enviando datos para nuevo autor:', datosNuevoAutor);
+      
+      // Enviar los datos al backend
+      const nuevoAutor = await autorService.crearAutor(datosNuevoAutor);
+      
+      // Si llegamos aquí, el autor se creó exitosamente
+      setMostrarFormularioNuevo(false);
+      setMensajeExito('Autor creado exitosamente');
+      setMostrarExito(true);
+      
+      // Recargar la lista de autores
+      await cargarAutores();
+      
+    } catch (error) {
+      console.error('Error al crear el autor:', error);
+      
+      // Si el error es un objeto con mensajes de validación
+      if (error && typeof error === 'object' && !(error instanceof Error)) {
+        console.log('Errores de validación recibidos del servidor:', error);
+        setErroresValidacion(error);
+      }
+      // Si es un error estándar con mensaje
+      else if (error && error.message) {
+        setError(`Error: ${error.message}`);
+      }
+      // Error genérico
+      else {
+        setError('Ocurrió un error inesperado al crear el autor. Por favor, intente nuevamente.');
+      }
+    }
+  };
+
   const handleEliminarClick = (autor) => {
-    let autorId = null;
+    console.log('Autor recibido para eliminar:', autor); // Depuración
     
-    if (autor && typeof autor === 'object') {
-      autorId = autor._id || autor.id;
-    } else if (typeof autor === 'string') {
-      autorId = autor;
+    // Verificar si el autor es un objeto y tiene _id o id
+    if (autor && (autor._id || autor.id)) {
+      // Usar _id si existe, de lo contrario usar id
+      const autorId = autor._id || autor.id;
+      console.log('ID del autor a eliminar:', autorId); // Depuración
+      
+      // Asignar el ID a la referencia
+      autorAEliminarId.current = autorId;
+      
+      // Mostrar el modal de confirmación
+      setMostrarConfirmacion(true);
+    } else {
+      console.error('No se pudo identificar el autor a eliminar. Objeto autor:', autor);
+      setError('No se pudo identificar el autor a eliminar. Por favor, recargue la página e intente nuevamente.');
     }
-    
-    if (!autorId) {
-      setError('No se pudo identificar el autor a eliminar. Por favor, intente nuevamente.');
-      return;
-    }
-    
-    const idString = autorId.toString();
-    autorAEliminarId.current = idString;
-    setMostrarConfirmacion(true);
   };
 
   const confirmarEliminar = async () => {
@@ -81,26 +142,29 @@ const ListaAutores = () => {
     }
     
     try {
+      // El servicio devuelve directamente los datos de la respuesta
       const response = await autorService.eliminarAutor(idAEliminar);
       
-      if (response && response.success) {
-        setAutores(prevAutores => prevAutores.filter(a => a._id !== idAEliminar));
-        setMostrarConfirmacion(false);
-        setMensajeExito('Autor eliminado exitosamente.');
-        setMostrarExito(true);
-        
-        // Recargar la lista completa de autores para asegurar consistencia
-        try {
-          const datosActualizados = await autorService.obtenerAutores();
-          setAutores(datosActualizados);
-        } catch (error) {
-          console.error('Error al actualizar la lista de autores:', error);
-        }
-      } else {
-        throw new Error(response?.error || 'Error al eliminar el autor');
+      // Si llegamos aquí, la eliminación fue exitosa
+      setAutores(prevAutores => prevAutores.filter(a => a._id !== idAEliminar));
+      setMostrarConfirmacion(false);
+      setMensajeExito('Autor eliminado exitosamente.');
+      setMostrarExito(true);
+      
+      // Recargar la lista completa de autores para asegurar consistencia
+      try {
+        const datosActualizados = await autorService.obtenerAutores();
+        setAutores(datosActualizados);
+      } catch (error) {
+        console.error('Error al actualizar la lista de autores:', error);
+        // No mostramos error al usuario ya que la eliminación fue exitosa
       }
     } catch (error) {
-      console.error('Error al eliminar el autor:', error);
+      console.error('Error al eliminar el autor:', {
+        message: error.message,
+        error: error,
+        stack: error.stack
+      });
       setError(error.message || 'No se pudo eliminar el autor. Por favor, intente nuevamente.');
     }
   };
@@ -284,6 +348,12 @@ const ListaAutores = () => {
     <div className="lista-autores-container">
       <div className="lista-header">
         <h2>Autores</h2>
+        <button 
+          className="btn-nuevo"
+          onClick={handleNuevoAutorClick}
+        >
+          + Nuevo Autor
+        </button>
       </div>
       
       {/* Modal de confirmación de eliminación */}
@@ -291,19 +361,96 @@ const ListaAutores = () => {
         <div className="modal-overlay">
           <div className="modal">
             <h3>Confirmar eliminación</h3>
-            <p>¿Está seguro de que desea eliminar este autor? Esta acción no se puede deshacer.</p>
+            <p>¿Está seguro de que desea eliminar este autor?</p>
+            
+            <div className="advertencia">
+              <p><strong>Advertencia:</strong> Esta acción también eliminará este autor de todos los libros que lo tengan asociado.</p>
+            </div>
+            
             <div className="modal-acciones">
-              <button onClick={() => setMostrarConfirmacion(false)} className="btn-cancelar">
+              <button 
+                onClick={() => setMostrarConfirmacion(false)} 
+                className="btn-cancelar"
+              >
                 Cancelar
               </button>
-              <button onClick={confirmarEliminar} className="btn-confirmar">
-                Eliminar
+              <button 
+                onClick={confirmarEliminar} 
+                className="btn-confirmar"
+              >
+                Eliminar autor
               </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Modal de formulario de nuevo autor */}
+      {mostrarFormularioNuevo && (
+        <div className="modal-overlay">
+          <div className="modal formulario-edicion">
+            <h3>Nuevo Autor</h3>
+            {error && <p className="error-mensaje">{error}</p>}
+            <form onSubmit={handleSubmitNuevoAutor}>
+              <div className="form-group">
+                <label>Nombre *</label>
+                <input
+                  type="text"
+                  name="nombre"
+                  value={formulario.nombre}
+                  onChange={handleInputChange}
+                  className={erroresValidacion.nombre ? 'input-error' : ''}
+                />
+                {erroresValidacion.nombre && (
+                  <span className="error-mensaje">{erroresValidacion.nombre}</span>
+                )}
+              </div>
+              
+              <div className="form-group">
+                <label>Nacionalidad</label>
+                <input
+                  type="text"
+                  name="nacionalidad"
+                  value={formulario.nacionalidad}
+                  onChange={handleInputChange}
+                  className={erroresValidacion.nacionalidad ? 'input-error' : ''}
+                />
+                {erroresValidacion.nacionalidad && (
+                  <span className="error-mensaje">{erroresValidacion.nacionalidad}</span>
+                )}
+              </div>
+              
+              <div className="form-group fecha-container">
+                <label>Fecha de Nacimiento</label>
+                <input
+                  type="date"
+                  name="fecha_nacimiento"
+                  value={formulario.fecha_nacimiento}
+                  onChange={handleInputChange}
+                  className={erroresValidacion.fecha_nacimiento ? 'input-error' : ''}
+                />
+                {erroresValidacion.fecha_nacimiento && (
+                  <span className="error-mensaje">{erroresValidacion.fecha_nacimiento}</span>
+                )}
+              </div>
+              
+              <div className="form-acciones">
+                <button 
+                  type="button" 
+                  onClick={() => setMostrarFormularioNuevo(false)}
+                  className="btn-cancelar"
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className="btn-guardar">
+                  Crear Autor
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      
       {/* Modal de formulario de edición */}
       {mostrarFormulario && (
         <div className="modal-overlay">
