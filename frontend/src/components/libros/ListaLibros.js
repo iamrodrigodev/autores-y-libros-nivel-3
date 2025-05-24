@@ -14,6 +14,22 @@ const ListaLibros = () => {
   const [eliminando, setEliminando] = useState(false);
   const [mensajeExito, setMensajeExito] = useState('');
   const [mostrarExito, setMostrarExito] = useState(false);
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [libroAEditar, setLibroAEditar] = useState(null);
+  const [generos, setGeneros] = useState([]);
+  const [autores, setAutores] = useState([]);
+  const [nuevoGenero, setNuevoGenero] = useState('');
+  const [nuevoAutor, setNuevoAutor] = useState('');
+  const [erroresValidacion, setErroresValidacion] = useState({});
+  const [formulario, setFormulario] = useState({
+    titulo: '',
+    fecha_publicacion: '',
+    paginas: '',
+    sinopsis: '',
+    disponibilidad: true,
+    generos: [],
+    autores: []
+  });
 
   useEffect(() => {
     const cargarLibros = async () => {
@@ -32,6 +48,150 @@ const ListaLibros = () => {
 
     cargarLibros();
   }, [reintentar]);
+
+  // Cargar géneros y autores al montar el componente
+  useEffect(() => {
+    const cargarDatos = async () => {
+      try {
+        const [generosData, autoresData] = await Promise.all([
+          libroService.obtenerGeneros(),
+          libroService.obtenerAutores()
+        ]);
+        setGeneros(generosData);
+        setAutores(autoresData);
+      } catch (error) {
+        console.error('Error al cargar datos:', error);
+      }
+    };
+    cargarDatos();
+  }, []);
+
+  // Función para manejar cambios en los inputs del formulario
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormulario(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  // Función para manejar la edición de un libro
+  const handleEditarClick = (libro) => {
+    inicializarFormularioEdicion(libro);
+  };
+
+  // Función para inicializar el formulario con los datos del libro a editar
+  const inicializarFormularioEdicion = (libro) => {
+    setLibroAEditar(libro);
+    setFormulario({
+      titulo: libro.titulo || '',
+      fecha_publicacion: libro.fecha_publicacion ? libro.fecha_publicacion.split('T')[0] : '',
+      paginas: libro.paginas || '',
+      sinopsis: libro.sinopsis || '',
+      disponibilidad: libro.disponibilidad || false,
+      generos: libro.generos ? libro.generos.map(g => typeof g === 'object' ? g._id : g) : [],
+      autores: libro.autores || []
+    });
+    // Limpiar errores al abrir el formulario
+    setErroresValidacion({});
+    setError(null);
+    setMostrarFormulario(true);
+  };
+
+  // Función para agregar un nuevo género
+  const agregarGenero = () => {
+    if (nuevoGenero && !formulario.generos.includes(nuevoGenero)) {
+      setFormulario(prev => ({
+        ...prev,
+        generos: [...prev.generos, nuevoGenero]
+      }));
+      setNuevoGenero('');
+    }
+  };
+
+  // Función para eliminar un género
+  const eliminarGenero = (generoAEliminar) => {
+    setFormulario(prev => ({
+      ...prev,
+      generos: prev.generos.filter(g => g !== generoAEliminar)
+    }));
+  };
+
+  // Función para agregar un nuevo autor
+  const agregarAutor = () => {
+    if (nuevoAutor && !formulario.autores.includes(nuevoAutor)) {
+      setFormulario(prev => ({
+        ...prev,
+        autores: [...prev.autores, nuevoAutor]
+      }));
+      setNuevoAutor('');
+    }
+  };
+
+  // Función para eliminar un autor
+  const eliminarAutor = (autorAEliminar) => {
+    setFormulario(prev => ({
+      ...prev,
+      autores: prev.autores.filter(a => a !== autorAEliminar)
+    }));
+  };
+
+
+
+  // Función para manejar el envío del formulario
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Limpiar errores previos
+    setErroresValidacion({});
+    setError(null);
+    
+    try {
+      // Crear un objeto con los datos del formulario
+      const datosLibro = {
+        titulo: formulario.titulo,
+        fecha_publicacion: formulario.fecha_publicacion,
+        paginas: formulario.paginas,
+        sinopsis: formulario.sinopsis,
+        disponibilidad: formulario.disponibilidad,
+        generos: formulario.generos,
+        autores: formulario.autores
+      };
+      
+      let respuesta;
+      if (libroAEditar) {
+        // Actualizar libro existente
+        respuesta = await libroService.actualizarLibro(libroAEditar._id, datosLibro);
+        setMensajeExito('Libro actualizado exitosamente');
+      } else {
+        // Crear nuevo libro
+        respuesta = await libroService.crearLibro(datosLibro);
+        setMensajeExito('Libro creado exitosamente');
+      }
+      
+      // Si la respuesta indica éxito, cerrar el formulario y actualizar la lista
+      if (respuesta && respuesta.success) {
+        setMostrarFormulario(false);
+        setReintentar(prev => !prev);
+        setMostrarExito(true);
+      }
+    } catch (error) {
+      console.error('Error al guardar el libro:', error);
+      
+      // Si el error es un objeto con mensajes de validación
+      if (typeof error === 'object' && error !== null) {
+        setErroresValidacion(error);
+      } 
+      // Si hay un mensaje de error
+      else if (error.message) {
+        setError(error.message);
+      } 
+      // Error genérico
+      else {
+        setError('Error al procesar la solicitud. Por favor, intente nuevamente.');
+      }
+    }
+  };
 
   // Función para formatear la fecha
   const formatearFecha = (fechaString) => {
@@ -224,6 +384,13 @@ const ListaLibros = () => {
               
               <div className="libro-acciones">
                 <button 
+                  onClick={() => handleEditarClick(libro)}
+                  className="btn-editar"
+                  title="Actualizar libro"
+                >
+                  Actualizar
+                </button>
+                <button 
                   onClick={() => confirmarEliminar(libro)}
                   className="btn-eliminar"
                   title="Eliminar libro"
@@ -239,6 +406,188 @@ const ListaLibros = () => {
           </div>
         )}
       </div>
+
+      {/* Modal de formulario de libro */}
+      {mostrarFormulario && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>{libroAEditar ? 'Editar Libro' : 'Nuevo Libro'}</h3>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label>Título:</label>
+                <input
+                  type="text"
+                  name="titulo"
+                  value={formulario.titulo}
+                  onChange={handleInputChange}
+                  className={`form-control ${erroresValidacion.titulo ? 'input-error' : ''}`}
+                />
+                {erroresValidacion.titulo && (
+                  <div className="mensaje-error">{erroresValidacion.titulo}</div>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label>Fecha de publicación:</label>
+                <input
+                  type="date"
+                  name="fecha_publicacion"
+                  value={formulario.fecha_publicacion}
+                  onChange={handleInputChange}
+                  className={`form-control ${erroresValidacion.fecha_publicacion ? 'input-error' : ''}`}
+                />
+                {erroresValidacion.fecha_publicacion && (
+                  <div className="mensaje-error">{erroresValidacion.fecha_publicacion}</div>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label>Páginas:</label>
+                <input
+                  type="number"
+                  name="paginas"
+                  value={formulario.paginas}
+                  onChange={handleInputChange}
+                  min="1"
+                  className={`form-control ${erroresValidacion.paginas ? 'input-error' : ''}`}
+                />
+                {erroresValidacion.paginas && (
+                  <div className="mensaje-error">{erroresValidacion.paginas}</div>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label>
+                  <input
+                    type="checkbox"
+                    name="disponibilidad"
+                    checked={formulario.disponibilidad}
+                    onChange={handleInputChange}
+                  />
+                  {' '}Disponible
+                </label>
+              </div>
+
+              <div className="form-group">
+                <label>Géneros:</label>
+                <div className="input-con-boton">
+                  <select
+                    value={nuevoGenero}
+                    onChange={(e) => setNuevoGenero(e.target.value)}
+                    className={`select-con-boton ${erroresValidacion.generos ? 'input-error' : ''}`}
+                  >
+                    <option value="">Selecciona un género</option>
+                    {generos.map((genero) => (
+                      <option key={genero._id} value={genero._id}>
+                        {genero.nombre}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={agregarGenero}
+                    className="btn-agregar"
+                    disabled={!nuevoGenero}
+                  >
+                    + Agregar
+                  </button>
+                </div>
+                {erroresValidacion.generos && (
+                  <div className="mensaje-error">{erroresValidacion.generos}</div>
+                )}
+                <div className="lista-etiquetas">
+                  {formulario.generos.map((genero, index) => (
+                    <span key={index} className="etiqueta">
+                      {genero}
+                      <button
+                        type="button"
+                        onClick={() => eliminarGenero(genero)}
+                        className="btn-eliminar-etiqueta"
+                      >
+                        &times;
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Autores:</label>
+                <div className="input-con-boton">
+                  <select
+                    value={nuevoAutor}
+                    onChange={(e) => setNuevoAutor(e.target.value)}
+                    className={`select-con-boton ${erroresValidacion.autores ? 'input-error' : ''}`}
+                  >
+                    <option value="">Selecciona un autor</option>
+                    {autores.map((autor) => (
+                      <option key={autor._id} value={autor.nombre}>
+                        {autor.nombre}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={agregarAutor}
+                    className="btn-agregar"
+                    disabled={!nuevoAutor}
+                  >
+                    + Agregar
+                  </button>
+                </div>
+                {erroresValidacion.autores && (
+                  <div className="mensaje-error">{erroresValidacion.autores}</div>
+                )}
+                <div className="lista-etiquetas">
+                  {formulario.autores.map((autor, index) => (
+                    <span key={index} className="etiqueta">
+                      {autor}
+                      <button
+                        type="button"
+                        onClick={() => eliminarAutor(autor)}
+                        className="btn-eliminar-etiqueta"
+                      >
+                        &times;
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Sinopsis:</label>
+                <textarea
+                  name="sinopsis"
+                  value={formulario.sinopsis}
+                  onChange={handleInputChange}
+                  rows="4"
+                  className={`form-control ${erroresValidacion.sinopsis ? 'input-error' : ''}`}
+                />
+                {erroresValidacion.sinopsis && (
+                  <div className="mensaje-error">{erroresValidacion.sinopsis}</div>
+                )}
+              </div>
+
+              <div className="modal-acciones">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMostrarFormulario(false);
+                    setLibroAEditar(null);
+                    setErroresValidacion({});
+                  }}
+                  className="btn-cancelar"
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className="btn-guardar">
+                  {libroAEditar ? 'Guardar Cambios' : 'Crear Libro'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
