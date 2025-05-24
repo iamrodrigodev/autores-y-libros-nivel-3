@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { libroService } from '../../services/libroService';
+import { autorService } from '../../services/autorService';
+import { generoService } from '../../services/generoService';
 import { getGenreColor } from '../../styles/colors';
 import { FaSpinner } from 'react-icons/fa';
 import './ListaLibros.css';
@@ -53,19 +55,37 @@ const ListaLibros = () => {
   }, [reintentar, mostrandoAgotados]);
 
   // Cargar géneros y autores al montar el componente
+  const cargarDatos = async () => {
+    try {
+      console.log('Cargando géneros y autores...');
+      const [generosData, autoresData] = await Promise.all([
+        generoService.obtenerGeneros(),
+        autorService.obtenerAutores()
+      ]);
+      
+      console.log('Datos de géneros:', generosData);
+      console.log('Datos de autores:', autoresData);
+      
+      // Asegurarse de que son arrays
+      const generos = Array.isArray(generosData) ? generosData : [];
+      const autores = Array.isArray(autoresData) ? autoresData : [];
+      
+      console.log('Géneros procesados:', generos);
+      console.log('Autores procesados:', autores);
+      
+      setGeneros(generos);
+      setAutores(autores);
+      
+      return { generos, autores };
+    } catch (error) {
+      console.error('Error al cargar datos:', error);
+      setGeneros([]);
+      setAutores([]);
+      return { generos: [], autores: [] };
+    }
+  };
+
   useEffect(() => {
-    const cargarDatos = async () => {
-      try {
-        const [generosData, autoresData] = await Promise.all([
-          libroService.obtenerGeneros(),
-          libroService.obtenerAutores()
-        ]);
-        setGeneros(generosData);
-        setAutores(autoresData);
-      } catch (error) {
-        console.error('Error al cargar datos:', error);
-      }
-    };
     cargarDatos();
   }, []);
 
@@ -93,45 +113,41 @@ const ListaLibros = () => {
     setNuevoGenero('');
     setNuevoAutor('');
     setErroresValidacion({});
-    setMostrarFormulario(true);
+    
+    // Asegurarse de que los géneros y autores estén cargados
+    if (generos.length === 0 || autores.length === 0) {
+      cargarDatos().then(() => setMostrarFormulario(true));
+    } else {
+      setMostrarFormulario(true);
+    }
   };
 
   // Función para abrir el formulario de edición
-  const abrirFormularioEdicion = (libro) => {
-    setLibroAEditar(libro);
-    setFormulario({
-      titulo: libro.titulo || '',
-      fecha_publicacion: libro.fecha_publicacion ? libro.fecha_publicacion.split('T')[0] : '',
-      paginas: libro.paginas || '',
-      sinopsis: libro.sinopsis || '',
-      disponibilidad: libro.disponibilidad !== undefined ? libro.disponibilidad : true,
-      generos: libro.generos ? libro.generos.map(g => g._id || g) : [],
-      autores: libro.autores ? libro.autores.map(a => a._id || a) : []
-    });
-    setMostrarFormulario(true);
+  const abrirFormularioEdicion = async (libro) => {
+    try {
+      // Asegurarse de que los géneros y autores estén cargados
+      await cargarDatos();
+      
+      setLibroAEditar(libro);
+      setFormulario({
+        titulo: libro.titulo || '',
+        fecha_publicacion: libro.fecha_publicacion ? libro.fecha_publicacion.split('T')[0] : '',
+        paginas: libro.paginas || '',
+        sinopsis: libro.sinopsis || '',
+        disponibilidad: libro.disponibilidad !== undefined ? libro.disponibilidad : true,
+        generos: libro.generos ? libro.generos.map(g => g._id || g) : [],
+        autores: libro.autores ? libro.autores.map(a => a._id || a) : []
+      });
+      setMostrarFormulario(true);
+    } catch (error) {
+      console.error('Error al cargar datos para edición:', error);
+      setError('No se pudieron cargar los datos necesarios para editar el libro');
+    }
   };
 
   // Función para manejar la edición de un libro
   const handleEditarClick = (libro) => {
     abrirFormularioEdicion(libro);
-  };
-
-  // Función para inicializar el formulario con los datos del libro a editar
-  const inicializarFormularioEdicion = (libro) => {
-    setLibroAEditar(libro);
-    setFormulario({
-      titulo: libro.titulo || '',
-      fecha_publicacion: libro.fecha_publicacion ? libro.fecha_publicacion.split('T')[0] : '',
-      paginas: libro.paginas || '',
-      sinopsis: libro.sinopsis || '',
-      disponibilidad: libro.disponibilidad || false,
-      generos: libro.generos ? libro.generos.map(g => typeof g === 'object' ? g._id : g) : [],
-      autores: libro.autores || []
-    });
-    // Limpiar errores al abrir el formulario
-    setErroresValidacion({});
-    setError(null);
-    setMostrarFormulario(true);
   };
 
   // Función para agregar un nuevo género
@@ -531,11 +547,15 @@ const ListaLibros = () => {
                     className={`select-con-boton ${erroresValidacion.generos ? 'input-error' : ''}`}
                   >
                     <option value="">Selecciona un género</option>
-                    {generos.map((genero) => (
-                      <option key={genero._id} value={genero._id}>
-                        {genero.nombre}
-                      </option>
-                    ))}
+                    {Array.isArray(generos) && generos.length > 0 ? (
+                      generos.map((genero) => (
+                        <option key={genero._id || genero.id} value={genero._id || genero.id}>
+                          {genero.nombre || genero.name || 'Sin nombre'}
+                        </option>
+                      ))
+                    ) : (
+                      <option disabled>No hay géneros disponibles</option>
+                    )}
                   </select>
                   <button
                     type="button"
@@ -550,18 +570,23 @@ const ListaLibros = () => {
                   <div className="mensaje-error">{erroresValidacion.generos}</div>
                 )}
                 <div className="lista-etiquetas">
-                  {formulario.generos.map((genero, index) => (
+                  {formulario.generos.map((generoId, index) => {
+                    // Buscar el género por ID para mostrar su nombre
+                    const genero = Array.isArray(generos) ? generos.find(g => (g._id === generoId || g.id === generoId)) : null;
+                    const nombreGenero = genero ? (genero.nombre || genero.name || 'Sin nombre') : 'Género no encontrado';
+                    return (
                     <span key={index} className="etiqueta">
-                      {genero}
+                      {nombreGenero}
                       <button
                         type="button"
-                        onClick={() => eliminarGenero(genero)}
+                        onClick={() => eliminarGenero(generoId)}
                         className="btn-eliminar-etiqueta"
                       >
                         &times;
                       </button>
                     </span>
-                  ))}
+                  );
+                  })}
                 </div>
               </div>
 
@@ -574,11 +599,15 @@ const ListaLibros = () => {
                     className={`select-con-boton ${erroresValidacion.autores ? 'input-error' : ''}`}
                   >
                     <option value="">Selecciona un autor</option>
-                    {autores.map((autor) => (
-                      <option key={autor._id} value={autor.nombre}>
-                        {autor.nombre}
-                      </option>
-                    ))}
+                    {Array.isArray(autores) && autores.length > 0 ? (
+                      autores.map((autor) => (
+                        <option key={autor._id || autor.id} value={autor._id || autor.id}>
+                          {autor.nombre || autor.name || 'Sin nombre'}
+                        </option>
+                      ))
+                    ) : (
+                      <option disabled>No hay autores disponibles</option>
+                    )}
                   </select>
                   <button
                     type="button"
@@ -593,18 +622,23 @@ const ListaLibros = () => {
                   <div className="mensaje-error">{erroresValidacion.autores}</div>
                 )}
                 <div className="lista-etiquetas">
-                  {formulario.autores.map((autor, index) => (
+                  {formulario.autores.map((autorId, index) => {
+                    // Buscar el autor por ID para mostrar su nombre
+                    const autor = Array.isArray(autores) ? autores.find(a => (a._id === autorId || a.id === autorId)) : null;
+                    const nombreAutor = autor ? (autor.nombre || autor.name || 'Sin nombre') : 'Autor no encontrado';
+                    return (
                     <span key={index} className="etiqueta">
-                      {autor}
+                      {nombreAutor}
                       <button
                         type="button"
-                        onClick={() => eliminarAutor(autor)}
+                        onClick={() => eliminarAutor(autorId)}
                         className="btn-eliminar-etiqueta"
                       >
                         &times;
                       </button>
                     </span>
-                  ))}
+                  );
+                  })}
                 </div>
               </div>
 

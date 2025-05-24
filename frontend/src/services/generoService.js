@@ -16,18 +16,35 @@ export const generoService = {
   // Obtener todos los géneros
   async obtenerGeneros() {
     try {
+      console.log('Solicitando géneros a:', API_URL);
       const response = await api.get('/');
+      console.log('Respuesta completa de géneros:', response);
       
-      // Asegurarse de que siempre devolvemos un array
-      if (response.data && response.data.success) {
-        // Asegurarse de que cada género tenga _id
-        return Array.isArray(response.data.data) 
-          ? response.data.data.map(genero => ({
-              ...genero,
-              _id: genero._id || genero.id || ''
-            }))
-          : [];
+      // Verificar si la respuesta tiene datos
+      if (response.data) {
+        // Si la respuesta tiene success y data
+        if (response.data.success && response.data.data) {
+          const generos = Array.isArray(response.data.data) 
+            ? response.data.data 
+            : [response.data.data];
+          
+          console.log('Géneros procesados:', generos);
+          return generos.map(genero => ({
+            ...genero,
+            _id: genero._id || genero.id || ''
+          }));
+        } 
+        // Si la respuesta es directamente un array
+        else if (Array.isArray(response.data)) {
+          console.log('Géneros (array directo):', response.data);
+          return response.data.map(genero => ({
+            ...genero,
+            _id: genero._id || genero.id || ''
+          }));
+        }
       }
+      
+      console.warn('No se encontraron géneros en la respuesta');
       return [];
     } catch (error) {
       // Si hay una respuesta del servidor pero con error

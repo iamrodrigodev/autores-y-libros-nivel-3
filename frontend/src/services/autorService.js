@@ -172,25 +172,35 @@ export const autorService = {
   // Obtener todos los autores
   async obtenerAutores() {
     try {
-      console.log('Obteniendo autores desde:', API_URL);
+      console.log('Solicitando autores a:', API_URL);
       const response = await api.get('/');
-      console.log('Respuesta del servidor (autores):', response.data);
+      console.log('Respuesta completa de autores:', response);
       
-      // Asegurarse de que siempre devolvemos un array
-      if (response.data && response.data.success) {
-        const autores = response.data.data || [];
-        console.log('Autores obtenidos:', autores);
-        // Verificar que cada autor tenga un _id
-        autores.forEach((autor, index) => {
-          console.log(`Autor ${index + 1}:`, {
-            nombre: autor.nombre,
-            _id: autor._id,
-            tieneId: !!autor._id
-          });
-        });
-        return autores;
+      // Verificar si la respuesta tiene datos
+      if (response.data) {
+        // Si la respuesta tiene success y data
+        if (response.data.success && response.data.data) {
+          const autores = Array.isArray(response.data.data) 
+            ? response.data.data 
+            : [response.data.data];
+          
+          console.log('Autores procesados:', autores);
+          return autores.map(autor => ({
+            ...autor,
+            _id: autor._id || autor.id || ''
+          }));
+        } 
+        // Si la respuesta es directamente un array
+        else if (Array.isArray(response.data)) {
+          console.log('Autores (array directo):', response.data);
+          return response.data.map(autor => ({
+            ...autor,
+            _id: autor._id || autor.id || ''
+          }));
+        }
       }
-      console.warn('La respuesta no tiene éxito o no contiene datos');
+      
+      console.warn('No se encontraron autores en la respuesta');
       return [];
     } catch (error) {
       console.error('Error al obtener los autores:', {
