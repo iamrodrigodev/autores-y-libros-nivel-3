@@ -223,14 +223,14 @@ const LibrosPorAutor = () => {
                     {libro.sinopsis || 'Sin sinopsis disponible'}
                   </p>
                 </div>
-                {libro.generos && libro.generos.length > 0 && (
-                  <div className="libro-generos">
-                    <h4 style={{
-                      margin: '0 0 0.5rem',
-                      fontSize: '0.9rem',
-                      color: '#555',
-                      fontWeight: '600'
-                    }}>Géneros</h4>
+                <div className="libro-generos">
+                  <h4 style={{
+                    margin: '0 0 0.5rem',
+                    fontSize: '0.9rem',
+                    color: '#555',
+                    fontWeight: '600'
+                  }}>Géneros</h4>
+                  {libro.generos && libro.generos.length > 0 ? (
                     <div className="generos-lista">
                       {libro.generos.map((genero, idx) => {
                         const generoNombre = typeof genero === 'object' ? genero.nombre : genero;
@@ -248,8 +248,16 @@ const LibrosPorAutor = () => {
                         );
                       })}
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <span className="sin-generos" style={{
+                      color: '#6c757d',
+                      fontStyle: 'italic',
+                      fontSize: '0.9rem'
+                    }}>
+                      No tiene géneros
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           ))}
