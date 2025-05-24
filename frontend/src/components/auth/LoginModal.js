@@ -3,11 +3,11 @@ import '../../styles/LoginModal.css';
 
 const LoginModal = ({ isOpen, onClose, onLogin }) => {
   const [formData, setFormData] = useState({
-    username: '',
+    email: '',
     password: ''
   });
   const [errores, setErrores] = useState({
-    username: '',
+    email: '',
     password: ''
   });
 
@@ -25,8 +25,10 @@ const LoginModal = ({ isOpen, onClose, onLogin }) => {
     // Validaciones
     const nuevosErrores = {};
     
-    if (!formData.username.trim()) {
-      nuevosErrores.username = 'El nombre de usuario es requerido';
+    if (!formData.email.trim()) {
+      nuevosErrores.email = 'El correo electrónico es requerido';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      nuevosErrores.email = 'El correo electrónico no es válido';
     }
     
     if (!formData.password) {
@@ -53,19 +55,19 @@ const LoginModal = ({ isOpen, onClose, onLogin }) => {
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="username">Nombre de usuario</label>
+            <label htmlFor="email">Correo electrónico</label>
             <input
-              type="text"
-              id="username"
-              name="username"
-              value={formData.username}
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
               onChange={handleInputChange}
-              placeholder="Ingresa tu usuario"
-              autoComplete="username"
-              className={errores.username ? 'input-error' : ''}
+              placeholder="Ingresa tu correo electrónico"
+              autoComplete="email"
+              className={errores.email ? 'input-error' : ''}
             />
-            {errores.username && (
-              <div className="mensaje-error">{errores.username}</div>
+            {errores.email && (
+              <div className="mensaje-error">{errores.email}</div>
             )}
           </div>
 
