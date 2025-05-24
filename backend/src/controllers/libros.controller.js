@@ -955,6 +955,47 @@ const agregarGeneros = async (req, res) => {
     }
 };
 
+// Eliminar un libro por su ID
+const eliminarLibro = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Validar el ID
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de libro no válido'
+            });
+        }
+
+        // Buscar y eliminar el libro
+        const libroEliminado = await Libro.findByIdAndDelete(id);
+
+        if (!libroEliminado) {
+            return res.status(404).json({
+                success: false,
+                message: 'Libro no encontrado'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Libro eliminado exitosamente',
+            data: {
+                id: libroEliminado._id,
+                titulo: libroEliminado.titulo
+            }
+        });
+    } catch (error) {
+        console.error('Error al eliminar libro:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al eliminar el libro',
+            error: formatError(error)
+        });
+    }
+};
+
 // Exportar controladores
 module.exports = {
     crearLibro,
@@ -964,5 +1005,6 @@ module.exports = {
     actualizarLibro,
     agregarAutores,
     agregarGeneros,
-    formatError
+    formatError,
+    eliminarLibro
 };
