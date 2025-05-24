@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { FaBook } from 'react-icons/fa';
 import { generoService } from '../../services/generoService';
 import { getGenreColor } from '../../styles/colors';
-// Import removed as we're not using icons anymore
 import './ListaGeneros.css';
 
 const ListaGeneros = () => {
@@ -22,6 +23,11 @@ const ListaGeneros = () => {
   const [mensajeExito, setMensajeExito] = useState('');
   const [erroresValidacion, setErroresValidacion] = useState({});
   const [mostrarConfirmarActualizar, setMostrarConfirmarActualizar] = useState(false);
+  const navigate = useNavigate();
+
+  const handleVerLibrosClick = (generoId) => {
+    navigate(`/generos/libros/${generoId}`);
+  };
 
   useEffect(() => {
     const cargarGeneros = async () => {
@@ -263,18 +269,29 @@ const ListaGeneros = () => {
                 </div>
                 
                 <div className="genero-acciones">
-                  <button 
-                    className="btn-editar"
-                    onClick={() => handleEditarClick(genero)}
-                  >
-                    Actualizar
-                  </button>
-                  <button 
-                    className="btn-eliminar"
-                    onClick={() => handleEliminarClick(genero)}
-                  >
-                    Eliminar
-                  </button>
+                  <div className="acciones-izquierda">
+                    <button 
+                      className="btn-ver-libros"
+                      onClick={() => handleVerLibrosClick(genero._id)}
+                      title="Ver libros de este género"
+                    >
+                      <FaBook />
+                    </button>
+                  </div>
+                  <div className="acciones-derecha">
+                    <button 
+                      className="btn-editar"
+                      onClick={() => handleEditarClick(genero)}
+                    >
+                      Actualizar
+                    </button>
+                    <button 
+                      className="btn-eliminar"
+                      onClick={() => handleEliminarClick(genero)}
+                    >
+                      Eliminar
+                    </button>
+                  </div>
                 </div>
               </div>
             );

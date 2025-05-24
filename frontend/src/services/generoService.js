@@ -113,6 +113,20 @@ export const generoService = {
     }
   },
   
+  // Obtener libros por ID de género
+  async obtenerLibrosPorGenero(id) {
+    try {
+      const response = await api.get(`/${id}/libros`);
+      return { data: response.data, error: null };
+    } catch (error) {
+      console.error('Error al obtener los libros del género:', error);
+      return { 
+        data: null, 
+        error: error.response?.data?.message || 'Error al cargar los libros del género' 
+      };
+    }
+  },
+
   // Eliminar un género
   async eliminarGenero(id) {
     try {
